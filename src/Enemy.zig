@@ -30,7 +30,7 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) void {
 
 pub fn checkCollisions(self: *Self, gs: *GameState, enemyIndex: usize) void {
     //bullet collision
-    for (gs.bullets.items, 0..) |*bullet, bulletIndex| {
+    for (gs.bullets.items, 0..) |bullet, bulletIndex| {
         if (rl.checkCollisionCircles(bullet.pos, bullet.radius, self.pos, self.radius)) {
             self.health -= 1;
             if (self.health <= 0) {

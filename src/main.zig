@@ -3,6 +3,7 @@ const rl = @import("raylib");
 const Player = @import("Player.zig");
 const Enemy = @import("Enemy.zig");
 const Bullet = @import("Bullet.zig");
+const Animation = @import("Animation.zig");
 const GameState = @import("GameState.zig");
 
 const screenWidth = 800;
@@ -13,7 +14,7 @@ pub fn main() !void {
     defer rl.closeWindow();
     rl.setTargetFPS(60);
     var gs = GameState.init();
-    defer gs.deinit();
+
     while (!rl.windowShouldClose()) {
 
         //update
@@ -26,11 +27,12 @@ pub fn main() !void {
         gs.camera.begin();
 
         rl.clearBackground(rl.Color.fromInt(0x052c46ff));
-        gs.render();
+        gs.render(dt);
         gs.camera.end();
         drawGUI(&gs);
         rl.endDrawing();
     }
+    gs.deinit();
 }
 
 fn drawGUI(gs: *GameState) void {

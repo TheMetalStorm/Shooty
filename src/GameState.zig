@@ -4,7 +4,7 @@ const Bullet = @import("Bullet.zig");
 const rl = @import("raylib");
 const std = @import("std");
 var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-const arenaAlloc = arena.allocator();
+pub const arenaAlloc = arena.allocator();
 camera: rl.Camera2D,
 player: Player,
 enemies: std.ArrayList(Enemy),
@@ -67,14 +67,18 @@ pub fn update(self: *Self, dt: f32) !void {
     self.camera.target.y += (self.player.pos.y - self.camera.target.y) * lerp * dt;
 }
 
-pub fn render(self: *Self) void {
+pub fn render(self: *Self, dt: f32) void {
     self.player.render();
 
     for (self.bullets.items) |*bullet| {
-        bullet.render();
+        bullet.render(dt);
     }
 
     for (self.enemies.items) |*enemy| {
         enemy.render();
     }
+}
+
+pub fn getAlloc() std.mem.Allocator {
+    return arenaAlloc;
 }
