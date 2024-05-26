@@ -23,7 +23,7 @@ pub fn init(
     _spriteWidth: usize,
     _spriteHeight: usize,
     _duration: f32,
-    comptime _spriteIndices: []const usize,
+    _spriteIndices: []const usize,
     _loop: bool,
 ) !Self {
     var _frames: std.ArrayList(rl.Rectangle) = std.ArrayList(rl.Rectangle).init(GameState.getAlloc());

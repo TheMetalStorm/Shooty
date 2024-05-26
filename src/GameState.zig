@@ -3,6 +3,8 @@ const Enemy = @import("Enemy.zig");
 const Bullet = @import("Bullet.zig");
 const rl = @import("raylib");
 const std = @import("std");
+const Animation = @import("Animation.zig");
+
 var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
 pub const arenaAlloc = arena.allocator();
 camera: rl.Camera2D,
@@ -10,6 +12,8 @@ player: Player,
 enemies: std.ArrayList(Enemy),
 bullets: std.ArrayList(Bullet),
 spritesheets: std.StringHashMap(*rl.Texture2D),
+animations: std.StringHashMap(*Animation),
+
 score: i32 = 0,
 
 const Self = @This();
@@ -18,13 +22,20 @@ const screenWidth = 800;
 const screenHeight = 450;
 
 pub fn init() !Self {
-    var ret = Self{ .camera = undefined, .player = undefined, .enemies = undefined, .bullets = undefined, .spritesheets = undefined, .score = 0 };
+    var ret = Self{ .camera = undefined, .player = undefined, .enemies = undefined, .bullets = undefined, .spritesheets = undefined, .score = 0, .animations = undefined };
     const _player = Player.init(150.0, 150.0, rl.Color.red, &ret);
     var _spritesheets = std.StringHashMap(*rl.Texture2D).init(arenaAlloc);
+    var _animations = std.StringHashMap(*Animation).init(arenaAlloc);
 
     //INFO: Set the spritesheets here
+    //TODO: struct SpriteSheetInfo (width, height, spriteW, spriteH) should get saved so we can use it later
     try _spritesheets.put("laser-bolts", try createSpritesheet("src/assets/spritesheets/laser-bolts.png"));
     try _spritesheets.put("explosion", try createSpritesheet("src/assets/spritesheets/explosion.png"));
+
+    //INFO: Set the Animations here
+    try _animations.put("bullet_normal", try createAnimation("bullet_normal", _spritesheets.get("laser-bolts").?, 50, &[_]usize{ 0, 1 }, true));
+    //TODO: animation switching breaks going from loopable -> non-loopable
+    try _animations.put("bullet_die", try createAnimation("bullet_die", _spritesheets.get("explosion").?, 30, &[_]usize{ 0, 1, 2, 3, 4 }, false));
 
     ret.player = _player;
     ret.camera = rl.Camera2D{
@@ -36,6 +47,7 @@ pub fn init() !Self {
     ret.enemies = std.ArrayList(Enemy).init(arenaAlloc);
     ret.bullets = std.ArrayList(Bullet).init(arenaAlloc);
     ret.spritesheets = _spritesheets;
+    ret.animations = _animations;
     return ret;
 }
 
@@ -43,6 +55,15 @@ fn createSpritesheet(path: [:0]const u8) !*rl.Texture2D {
     const texture = try arenaAlloc.create(rl.Texture2D);
     texture.* = rl.loadTexture(path);
     return texture;
+}
+
+fn createAnimation(name: [:0]const u8, texture: *rl.Texture2D, length: f32, spriteIndices: []const usize, loop: bool) !*Animation {
+    const bulletAnimPtr = try getAlloc().create(Animation);
+
+    //TODO: pass new struct SpriteSheetInfo so that 2, 2, 16, 16, is not hardcoded
+    const bulletAnim = try Animation.init(name, texture, 2, 2, 16, 16, length, spriteIndices, loop);
+    bulletAnimPtr.* = bulletAnim;
+    return bulletAnimPtr;
 }
 
 pub fn deinit(self: *Self) void {

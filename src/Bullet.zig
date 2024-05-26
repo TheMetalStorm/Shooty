@@ -30,22 +30,10 @@ pub fn init(
 ) !Self { //, _texture: rl.Texture2D) Self {
 
     const _animManagerPtr = try GameState.getAlloc().create(AnimationManager);
-    var _animManager = AnimationManager.init();
+    var _animManager = try AnimationManager.init();
 
-    //TODO: Animations should be a resource loaded in GameState that we just get a pointer to and register with the AnimationManager
-    const bulletSprites = [2]usize{ 0, 1 };
-    const bulletAnimPtr = try GameState.getAlloc().create(Animation);
-    const bulletAnimTexture = _gs.spritesheets.get("laser-bolts") orelse return error.GenericError;
-    const bulletAnim = try Animation.init("normal", bulletAnimTexture, 2, 2, 16, 16, 50, &bulletSprites, true);
-    bulletAnimPtr.* = bulletAnim;
-    try _animManager.registerAnimation(bulletAnimPtr.name, bulletAnimPtr);
-
-    const dieAnimSprites = [5]usize{ 0, 1, 2, 3, 4 };
-    const dieAnimPtr = try GameState.getAlloc().create(Animation);
-    const dieAnimTexture = _gs.spritesheets.get("explosion") orelse return error.GenericError;
-    const dieAnim = try Animation.init("die", dieAnimTexture, 5, 1, 16, 16, 50, &dieAnimSprites, false);
-    dieAnimPtr.* = dieAnim;
-    try _animManager.registerAnimation(dieAnimPtr.name, dieAnimPtr);
+    try _animManager.registerAnimation("bullet_normal", _gs.animations.get("bullet_normal").?);
+    try _animManager.registerAnimation("bullet_die", _gs.animations.get("bullet_die").?);
 
     _animManagerPtr.* = _animManager;
 
@@ -78,8 +66,8 @@ pub fn render(self: *Self, dt: f32) void {
     const sizeMult = 4;
 
     if (self.markedDead == true) {
-        if (!std.mem.eql(u8, self.animManager.currentAnimation.name, "die")) {
-            self.animManager.currentAnimation = self.animManager.animations.get("die") orelse return;
+        if (!std.mem.eql(u8, self.animManager.currentAnimation.name, "bullet_die")) {
+            self.animManager.currentAnimation = self.animManager.animations.get("bullet_die") orelse return;
         }
         if (self.animManager.isCurrentDone()) {
             return;

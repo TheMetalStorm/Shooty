@@ -8,7 +8,7 @@ const Self = @This();
 currentAnimation: *Animation = undefined,
 animations: std.StringHashMap(*Animation) = undefined,
 
-pub fn init() Self {
+pub fn init() !Self {
     return Self{ .animations = std.StringHashMap(*Animation).init(GameState.getAlloc()) };
 }
 
@@ -33,8 +33,13 @@ pub fn playCurrent(self: *Self, dest: rl.Rectangle, origin: rl.Vector2, rotation
     rl.drawTexturePro(self.currentAnimation.spritesheet.*, self.currentAnimation.frames.items[currentFrame], dest, origin, rotation, color);
 }
 
-pub fn setCurrent(self: *Self, name: []const u8) void {
-    self.currentAnimation = self.animations.get(name) orelse return;
+pub fn setCurrent(self: *Self, name: []const u8) !void {
+    GameState.getAlloc().destroy(self.currentAnimation);
+    const curr = try GameState.getAlloc().create(Animation);
+
+    curr.* = self.animations.get(name).?.*;
+
+    self.currentAnimation = curr;
 }
 
 pub fn registerAnimation(self: *Self, name: []const u8, _animation: *Animation) !void {
@@ -42,6 +47,7 @@ pub fn registerAnimation(self: *Self, name: []const u8, _animation: *Animation) 
 }
 
 pub fn deinit(self: *Self) void {
+    GameState.getAlloc().destroy(self.currentAnimation);
     self.animations.deinit();
 }
 
