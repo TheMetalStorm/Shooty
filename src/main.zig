@@ -26,7 +26,7 @@ pub fn main() !void {
         gs.camera.begin();
 
         rl.clearBackground(rl.Color.fromInt(0x052c46ff));
-        gs.render(dt);
+        try gs.render(dt);
         gs.camera.end();
         drawGUI(&gs);
         rl.endDrawing();

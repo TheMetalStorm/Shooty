@@ -30,7 +30,7 @@ pub fn playCurrent(self: *Self, dest: rl.Rectangle, origin: rl.Vector2, rotation
 
     const currentFrame = @as(usize, @intFromFloat(@divFloor(self.currentAnimation.playedTime, self.currentAnimation.frameTime)));
 
-    rl.drawTexturePro(self.currentAnimation.spritesheet.*, self.currentAnimation.frames.items[currentFrame], dest, origin, rotation, color);
+    rl.drawTexturePro(self.currentAnimation.spritesheet.spritesheet.*, self.currentAnimation.frames.items[currentFrame], dest, origin, rotation, color);
 }
 
 pub fn setCurrent(self: *Self, name: []const u8) !void {
@@ -38,7 +38,7 @@ pub fn setCurrent(self: *Self, name: []const u8) !void {
     const curr = try GameState.getAlloc().create(Animation);
 
     curr.* = self.animations.get(name).?.*;
-
+    std.debug.print("{?}\n", .{curr});
     self.currentAnimation = curr;
 }
 

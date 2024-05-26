@@ -61,13 +61,13 @@ pub fn update(self: *Self, dt: f32) void {
     self.pos.y += self.dir.y * self.v * dt;
 }
 
-pub fn render(self: *Self, dt: f32) void {
+pub fn render(self: *Self, dt: f32) !void {
     if (self.animManager.animations.count() == 0) return;
     const sizeMult = 4;
 
     if (self.markedDead == true) {
         if (!std.mem.eql(u8, self.animManager.currentAnimation.name, "bullet_die")) {
-            self.animManager.currentAnimation = self.animManager.animations.get("bullet_die") orelse return;
+            try self.animManager.setCurrent("bullet_die");
         }
         if (self.animManager.isCurrentDone()) {
             return;

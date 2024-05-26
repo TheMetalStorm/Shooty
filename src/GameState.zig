@@ -4,6 +4,7 @@ const Bullet = @import("Bullet.zig");
 const rl = @import("raylib");
 const std = @import("std");
 const Animation = @import("Animation.zig");
+const Spritesheet = @import("Spritesheet.zig");
 
 var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
 pub const arenaAlloc = arena.allocator();
@@ -11,7 +12,7 @@ camera: rl.Camera2D,
 player: Player,
 enemies: std.ArrayList(Enemy),
 bullets: std.ArrayList(Bullet),
-spritesheets: std.StringHashMap(*rl.Texture2D),
+spritesheets: std.StringHashMap(*Spritesheet),
 animations: std.StringHashMap(*Animation),
 
 score: i32 = 0,
@@ -24,13 +25,12 @@ const screenHeight = 450;
 pub fn init() !Self {
     var ret = Self{ .camera = undefined, .player = undefined, .enemies = undefined, .bullets = undefined, .spritesheets = undefined, .score = 0, .animations = undefined };
     const _player = Player.init(150.0, 150.0, rl.Color.red, &ret);
-    var _spritesheets = std.StringHashMap(*rl.Texture2D).init(arenaAlloc);
+    var _spritesheets = std.StringHashMap(*Spritesheet).init(arenaAlloc);
     var _animations = std.StringHashMap(*Animation).init(arenaAlloc);
 
     //INFO: Set the spritesheets here
-    //TODO: struct SpriteSheetInfo (width, height, spriteW, spriteH) should get saved so we can use it later
-    try _spritesheets.put("laser-bolts", try createSpritesheet("src/assets/spritesheets/laser-bolts.png"));
-    try _spritesheets.put("explosion", try createSpritesheet("src/assets/spritesheets/explosion.png"));
+    try _spritesheets.put("laser-bolts", try createSpritesheet("src/assets/spritesheets/laser-bolts.png", 2, 2, 16, 16));
+    try _spritesheets.put("explosion", try createSpritesheet("src/assets/spritesheets/explosion.png", 5, 1, 16, 16));
 
     //INFO: Set the Animations here
     try _animations.put("bullet_normal", try createAnimation("bullet_normal", _spritesheets.get("laser-bolts").?, 50, &[_]usize{ 0, 1 }, true));
@@ -51,19 +51,16 @@ pub fn init() !Self {
     return ret;
 }
 
-fn createSpritesheet(path: [:0]const u8) !*rl.Texture2D {
-    const texture = try arenaAlloc.create(rl.Texture2D);
-    texture.* = rl.loadTexture(path);
-    return texture;
+fn createSpritesheet(path: [:0]const u8, numW: usize, numH: usize, spriteWidth: usize, spriteHeight: usize) !*Spritesheet {
+    const spritesheetPtr = try arenaAlloc.create(Spritesheet);
+    spritesheetPtr.* = try Spritesheet.init(path, numW, numH, spriteWidth, spriteHeight);
+    return spritesheetPtr;
 }
 
-fn createAnimation(name: [:0]const u8, texture: *rl.Texture2D, length: f32, spriteIndices: []const usize, loop: bool) !*Animation {
-    const bulletAnimPtr = try getAlloc().create(Animation);
-
-    //TODO: pass new struct SpriteSheetInfo so that 2, 2, 16, 16, is not hardcoded
-    const bulletAnim = try Animation.init(name, texture, 2, 2, 16, 16, length, spriteIndices, loop);
-    bulletAnimPtr.* = bulletAnim;
-    return bulletAnimPtr;
+fn createAnimation(name: [:0]const u8, spritesheet: *Spritesheet, length: f32, spriteIndices: []const usize, loop: bool) !*Animation {
+    const animPtr = try getAlloc().create(Animation);
+    animPtr.* = try Animation.init(name, spritesheet, length, spriteIndices, loop);
+    return animPtr;
 }
 
 pub fn deinit(self: *Self) void {
@@ -100,10 +97,10 @@ pub fn update(self: *Self, dt: f32) !void {
     self.camera.target.y += (self.player.pos.y - self.camera.target.y) * lerp * dt;
 }
 
-pub fn render(self: *Self, dt: f32) void {
+pub fn render(self: *Self, dt: f32) !void {
     for (self.bullets.items) |*bullet| {
         if (bullet.active)
-            bullet.render(dt);
+            try bullet.render(dt);
     }
 
     self.player.render();
