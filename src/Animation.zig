@@ -1,4 +1,3 @@
-//TODO: how to play animation and destroy attached object when it's done
 const rl = @import("raylib");
 const std = @import("std");
 const GameState = @import("GameState.zig");
@@ -13,7 +12,6 @@ duration: f32, //in milliseconds
 playedTime: f32,
 frameTime: f32,
 loop: bool,
-// destroyAfterPlay: bool,
 frames: std.ArrayList(rl.Rectangle) = undefined,
 const Self = @This();
 
@@ -27,8 +25,6 @@ pub fn init(
     _duration: f32,
     comptime _spriteIndices: []const usize,
     _loop: bool,
-    //_destroyAfterPlay: bool,
-
 ) !Self {
     var _frames: std.ArrayList(rl.Rectangle) = std.ArrayList(rl.Rectangle).init(GameState.getAlloc());
     for (_spriteIndices) |index| {
@@ -55,29 +51,4 @@ pub fn init(
         .loop = _loop,
         .playedTime = 0.0,
     };
-}
-
-pub fn play(self: *Self, dest: rl.Rectangle, origin: rl.Vector2, rotation: f32, color: rl.Color, dt: f32) void {
-    if (self.frames.items.len == 0) {
-        return;
-    }
-    self.playedTime += dt * 100;
-
-    if (self.playedTime >= self.duration) {
-        if (self.loop) {
-            self.playedTime = 0;
-        } else {
-            self.playedTime = self.duration;
-        }
-    }
-
-    if (self.playedTime == self.duration) return;
-
-    const currentFrame = @as(usize, @intFromFloat(@divFloor(self.playedTime, self.frameTime)));
-
-    rl.drawTexturePro(self.spritesheet.*, self.frames.items[currentFrame], dest, origin, rotation, color);
-}
-
-pub fn isDone(self: *Self) bool {
-    return self.playedTime >= self.duration and !self.loop;
 }

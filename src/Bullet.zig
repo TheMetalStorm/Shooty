@@ -2,15 +2,15 @@ const rl = @import("raylib");
 const std = @import("std");
 const GameState = @import("GameState.zig");
 const Animation = @import("Animation.zig");
+const AnimationManager = @import("AnimationManager.zig");
 
 pos: rl.Vector2,
 v: f32,
 dir: rl.Vector2,
 color: rl.Color,
 radius: f32 = 5,
-//refactor into own struct ?AnimationManger?
-currentAnimation: *Animation = undefined,
-animations: std.StringHashMap(*Animation) = std.StringHashMap(*Animation).init(GameState.getAlloc()),
+animManager: *AnimationManager,
+
 markedDead: bool = false,
 active: bool = true,
 gs: *GameState,
@@ -20,24 +20,36 @@ lifetimer: f32 = 0,
 const Self = @This();
 const bulletSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 16);
 
-pub fn init(_x: f32, _y: f32, _dir: rl.Vector2, _v: f32, _color: rl.Color, _gs: *GameState) !Self { //, _texture: rl.Texture2D) Self {
+pub fn init(
+    _x: f32,
+    _y: f32,
+    _dir: rl.Vector2,
+    _v: f32,
+    _color: rl.Color,
+    _gs: *GameState,
+) !Self { //, _texture: rl.Texture2D) Self {
 
-    var ret = Self{ .pos = rl.Vector2.init(_x, _y), .dir = _dir, .v = _v, .color = _color, .gs = _gs }; //, .texture = _texture };
-    const usedSprites = [2]usize{ 0, 1 };
-    const bulletAnimPointer = try GameState.getAlloc().create(Animation);
-    const bulletTexture = _gs.spritesheets.get("laser-bolts") orelse return error.GenericError;
-    const bulletAnim = try Animation.init("normal", bulletTexture, 2, 2, 16, 16, 50, &usedSprites, true);
-    bulletAnimPointer.* = bulletAnim;
-    try ret.addAnimation(bulletAnimPointer.name, bulletAnimPointer);
+    const _animManagerPtr = try GameState.getAlloc().create(AnimationManager);
+    var _animManager = AnimationManager.init();
 
-    const usedSprites1 = [5]usize{ 0, 1, 2, 3, 4 };
-    const bulletAnimPointer1 = try GameState.getAlloc().create(Animation);
-    const bulletTexture1 = _gs.spritesheets.get("explosion") orelse return error.GenericError;
-    const bulletAnim1 = try Animation.init("die", bulletTexture1, 5, 1, 16, 16, 50, &usedSprites1, false);
-    bulletAnimPointer1.* = bulletAnim1;
-    try ret.addAnimation(bulletAnimPointer1.name, bulletAnimPointer1);
+    //TODO: Animations should be a resource loaded in GameState that we just get a pointer to and register with the AnimationManager
+    const bulletSprites = [2]usize{ 0, 1 };
+    const bulletAnimPtr = try GameState.getAlloc().create(Animation);
+    const bulletAnimTexture = _gs.spritesheets.get("laser-bolts") orelse return error.GenericError;
+    const bulletAnim = try Animation.init("normal", bulletAnimTexture, 2, 2, 16, 16, 50, &bulletSprites, true);
+    bulletAnimPtr.* = bulletAnim;
+    try _animManager.registerAnimation(bulletAnimPtr.name, bulletAnimPtr);
 
-    return ret;
+    const dieAnimSprites = [5]usize{ 0, 1, 2, 3, 4 };
+    const dieAnimPtr = try GameState.getAlloc().create(Animation);
+    const dieAnimTexture = _gs.spritesheets.get("explosion") orelse return error.GenericError;
+    const dieAnim = try Animation.init("die", dieAnimTexture, 5, 1, 16, 16, 50, &dieAnimSprites, false);
+    dieAnimPtr.* = dieAnim;
+    try _animManager.registerAnimation(dieAnimPtr.name, dieAnimPtr);
+
+    _animManagerPtr.* = _animManager;
+
+    return Self{ .pos = rl.Vector2.init(_x, _y), .dir = _dir, .v = _v, .color = _color, .gs = _gs, .animManager = _animManagerPtr }; //, .texture = _texture };
 }
 
 pub fn update(self: *Self, dt: f32) void {
@@ -47,9 +59,9 @@ pub fn update(self: *Self, dt: f32) void {
     }
 
     if (self.markedDead) {
-        if (self.currentAnimation.isDone()) {
+        if (self.animManager.isCurrentDone()) {
             self.active = false;
-            //we still have the pointer to this Bullet in gs.bullets, but we mark it as inactive so no use-after-free.
+            //TODO: we still have the pointer to this Bullet in gs.bullets, but we mark it as inactive so no use-after-free.
             //still would be better to remove it from the list, but that would mess with the array indices we would use to
             // find and remove the ptr
             //gets removed at end of Game or maybe when we load a new level (if we ever do that)
@@ -62,31 +74,23 @@ pub fn update(self: *Self, dt: f32) void {
 }
 
 pub fn render(self: *Self, dt: f32) void {
-    if (self.animations.count() == 0) return;
+    if (self.animManager.animations.count() == 0) return;
     const sizeMult = 4;
 
     if (self.markedDead == true) {
-        if (!std.mem.eql(u8, self.currentAnimation.name, "die")) {
-            self.currentAnimation = self.animations.get("die") orelse return;
+        if (!std.mem.eql(u8, self.animManager.currentAnimation.name, "die")) {
+            self.animManager.currentAnimation = self.animManager.animations.get("die") orelse return;
         }
-        if (self.currentAnimation.isDone()) {
+        if (self.animManager.isCurrentDone()) {
             return;
         }
-        self.currentAnimation.play(rl.Rectangle.init(self.pos.x, self.pos.y, bulletSpriteRect.width * sizeMult, bulletSpriteRect.height * sizeMult), rl.Vector2.init(bulletSpriteRect.width * sizeMult / 2, bulletSpriteRect.height * sizeMult / 2), 0, rl.Color.white, dt);
+        self.animManager.playCurrent(rl.Rectangle.init(self.pos.x, self.pos.y, bulletSpriteRect.width * sizeMult, bulletSpriteRect.height * sizeMult), rl.Vector2.init(bulletSpriteRect.width * sizeMult / 2, bulletSpriteRect.height * sizeMult / 2), 0, rl.Color.white, dt);
         return;
     }
     const angle = @mod(std.math.radiansToDegrees(std.math.atan2(self.dir.y, self.dir.x)) + 360 + 90, 360); // 90 is the offset to make the ship face the mouse
-    self.currentAnimation.play(rl.Rectangle.init(self.pos.x, self.pos.y, bulletSpriteRect.width * sizeMult, bulletSpriteRect.height * sizeMult), rl.Vector2.init(bulletSpriteRect.width * sizeMult / 2, bulletSpriteRect.height * sizeMult / 2), angle, rl.Color.white, dt);
-}
-
-pub fn setAnimation(self: *Self, name: []const u8) void {
-    self.currentAnimation = self.animations.get(name) orelse return;
-}
-
-pub fn addAnimation(self: *Self, name: []const u8, _animation: *Animation) !void {
-    try self.animations.put(name, _animation);
+    self.animManager.playCurrent(rl.Rectangle.init(self.pos.x, self.pos.y, bulletSpriteRect.width * sizeMult, bulletSpriteRect.height * sizeMult), rl.Vector2.init(bulletSpriteRect.width * sizeMult / 2, bulletSpriteRect.height * sizeMult / 2), angle, rl.Color.white, dt);
 }
 
 pub fn deinit(self: *Self) void {
-    self.animations.deinit();
+    self.animManager.deinit();
 }
