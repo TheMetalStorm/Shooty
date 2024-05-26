@@ -49,11 +49,6 @@ pub fn update(self: *Self, dt: f32) void {
     if (self.markedDead) {
         if (self.animManager.isCurrentDone()) {
             self.active = false;
-            //TODO: we still have the pointer to this Bullet in gs.bullets, but we mark it as inactive so no use-after-free.
-            //still would be better to remove it from the list, but that would mess with the array indices we would use to
-            // find and remove the ptr
-            //gets removed at end of Game or maybe when we load a new level (if we ever do that)
-            self.deinit();
         }
         return;
     }

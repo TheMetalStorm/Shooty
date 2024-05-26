@@ -26,13 +26,12 @@ pub fn init(_alloc: std.mem.Allocator) !Self {
     var _spritesheets = std.StringHashMap(*Spritesheet).init(_alloc);
     var _animations = std.StringHashMap(*Animation).init(_alloc);
 
-    //INFO: Set the spritesheets here
+    //INFO: Set the spritesheets heres
     try _spritesheets.put("laser-bolts", try createSpritesheet(_alloc, "src/assets/spritesheets/laser-bolts.png", 2, 2, 16, 16));
     try _spritesheets.put("explosion", try createSpritesheet(_alloc, "src/assets/spritesheets/explosion.png", 5, 1, 16, 16));
 
     //INFO: Set the Animations here
     try _animations.put("bullet_normal", try createAnimation(_alloc, "bullet_normal", _spritesheets.get("laser-bolts").?, 50, &[_]usize{ 0, 1 }, true));
-    //TODO: animation switching breaks going from loopable -> non-loopable
     try _animations.put("bullet_die", try createAnimation(_alloc, "bullet_die", _spritesheets.get("explosion").?, 30, &[_]usize{ 0, 1, 2, 3, 4 }, false));
 
     ret.player = _player;
@@ -62,13 +61,14 @@ fn createAnimation(alloc: std.mem.Allocator, name: [:0]const u8, spritesheet: *S
     return animPtr;
 }
 
-pub fn deinit(self: *Self) void {
-    self.player.deinit();
-    for (self.bullets.items) |*bullet| {
-        if (bullet.active)
-            bullet.deinit();
-    }
-    levelArena.deinit();
+pub fn deinit(_: *Self) void {
+    //TODO: maybe useful when we have levels but not for now
+    // self.player.deinit();
+    // for (self.bullets.items) |*bullet| {
+    //     if (bullet.active)
+    //         bullet.deinit();
+    // }
+    // levelArena.deinit();
 }
 
 pub fn update(self: *Self, dt: f32) !void {

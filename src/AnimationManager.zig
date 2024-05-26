@@ -34,7 +34,6 @@ pub fn playCurrent(self: *Self, dest: rl.Rectangle, origin: rl.Vector2, rotation
 }
 
 pub fn setCurrent(self: *Self, name: []const u8) !void {
-    GameState.getAlloc().destroy(self.currentAnimation);
     const curr = try GameState.getAlloc().create(Animation);
 
     curr.* = self.animations.get(name).?.*;
@@ -47,7 +46,6 @@ pub fn registerAnimation(self: *Self, name: []const u8, _animation: *Animation) 
 }
 
 pub fn deinit(self: *Self) void {
-    GameState.getAlloc().destroy(self.currentAnimation);
     self.animations.deinit();
 }
 
