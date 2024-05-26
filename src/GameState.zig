@@ -6,36 +6,34 @@ const std = @import("std");
 const Animation = @import("Animation.zig");
 const Spritesheet = @import("Spritesheet.zig");
 
-var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-pub const arenaAlloc = arena.allocator();
+var levelArena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+pub const levelAlloc = levelArena.allocator();
 camera: rl.Camera2D,
 player: Player,
 enemies: std.ArrayList(Enemy),
 bullets: std.ArrayList(Bullet),
 spritesheets: std.StringHashMap(*Spritesheet),
 animations: std.StringHashMap(*Animation),
-
 score: i32 = 0,
 
 const Self = @This();
-
 const screenWidth = 800;
 const screenHeight = 450;
 
-pub fn init() !Self {
+pub fn init(_alloc: std.mem.Allocator) !Self {
     var ret = Self{ .camera = undefined, .player = undefined, .enemies = undefined, .bullets = undefined, .spritesheets = undefined, .score = 0, .animations = undefined };
     const _player = Player.init(150.0, 150.0, rl.Color.red, &ret);
-    var _spritesheets = std.StringHashMap(*Spritesheet).init(arenaAlloc);
-    var _animations = std.StringHashMap(*Animation).init(arenaAlloc);
+    var _spritesheets = std.StringHashMap(*Spritesheet).init(_alloc);
+    var _animations = std.StringHashMap(*Animation).init(_alloc);
 
     //INFO: Set the spritesheets here
-    try _spritesheets.put("laser-bolts", try createSpritesheet("src/assets/spritesheets/laser-bolts.png", 2, 2, 16, 16));
-    try _spritesheets.put("explosion", try createSpritesheet("src/assets/spritesheets/explosion.png", 5, 1, 16, 16));
+    try _spritesheets.put("laser-bolts", try createSpritesheet(_alloc, "src/assets/spritesheets/laser-bolts.png", 2, 2, 16, 16));
+    try _spritesheets.put("explosion", try createSpritesheet(_alloc, "src/assets/spritesheets/explosion.png", 5, 1, 16, 16));
 
     //INFO: Set the Animations here
-    try _animations.put("bullet_normal", try createAnimation("bullet_normal", _spritesheets.get("laser-bolts").?, 50, &[_]usize{ 0, 1 }, true));
+    try _animations.put("bullet_normal", try createAnimation(_alloc, "bullet_normal", _spritesheets.get("laser-bolts").?, 50, &[_]usize{ 0, 1 }, true));
     //TODO: animation switching breaks going from loopable -> non-loopable
-    try _animations.put("bullet_die", try createAnimation("bullet_die", _spritesheets.get("explosion").?, 30, &[_]usize{ 0, 1, 2, 3, 4 }, false));
+    try _animations.put("bullet_die", try createAnimation(_alloc, "bullet_die", _spritesheets.get("explosion").?, 30, &[_]usize{ 0, 1, 2, 3, 4 }, false));
 
     ret.player = _player;
     ret.camera = rl.Camera2D{
@@ -44,22 +42,23 @@ pub fn init() !Self {
         .rotation = 0,
         .zoom = 1,
     };
-    ret.enemies = std.ArrayList(Enemy).init(arenaAlloc);
-    ret.bullets = std.ArrayList(Bullet).init(arenaAlloc);
+    ret.enemies = std.ArrayList(Enemy).init(levelAlloc);
+    ret.bullets = std.ArrayList(Bullet).init(levelAlloc);
     ret.spritesheets = _spritesheets;
     ret.animations = _animations;
+
     return ret;
 }
 
-fn createSpritesheet(path: [:0]const u8, numW: usize, numH: usize, spriteWidth: usize, spriteHeight: usize) !*Spritesheet {
-    const spritesheetPtr = try arenaAlloc.create(Spritesheet);
-    spritesheetPtr.* = try Spritesheet.init(path, numW, numH, spriteWidth, spriteHeight);
+fn createSpritesheet(alloc: std.mem.Allocator, path: [:0]const u8, numW: usize, numH: usize, spriteWidth: usize, spriteHeight: usize) !*Spritesheet {
+    const spritesheetPtr = try alloc.create(Spritesheet);
+    spritesheetPtr.* = try Spritesheet.init(alloc, path, numW, numH, spriteWidth, spriteHeight);
     return spritesheetPtr;
 }
 
-fn createAnimation(name: [:0]const u8, spritesheet: *Spritesheet, length: f32, spriteIndices: []const usize, loop: bool) !*Animation {
-    const animPtr = try getAlloc().create(Animation);
-    animPtr.* = try Animation.init(name, spritesheet, length, spriteIndices, loop);
+fn createAnimation(alloc: std.mem.Allocator, name: [:0]const u8, spritesheet: *Spritesheet, length: f32, spriteIndices: []const usize, loop: bool) !*Animation {
+    const animPtr = try alloc.create(Animation);
+    animPtr.* = try Animation.init(alloc, name, spritesheet, length, spriteIndices, loop);
     return animPtr;
 }
 
@@ -69,7 +68,7 @@ pub fn deinit(self: *Self) void {
         if (bullet.active)
             bullet.deinit();
     }
-    arena.deinit();
+    levelArena.deinit();
 }
 
 pub fn update(self: *Self, dt: f32) !void {
@@ -111,5 +110,5 @@ pub fn render(self: *Self, dt: f32) !void {
 }
 
 pub fn getAlloc() std.mem.Allocator {
-    return arenaAlloc;
+    return levelAlloc;
 }

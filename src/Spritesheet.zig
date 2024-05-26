@@ -9,8 +9,8 @@ spriteWidth: usize,
 spriteHeight: usize,
 
 const Self = @This();
-pub fn init(_path: [:0]const u8, _numSpritesHorizontal: usize, _numSpritesVertical: usize, _spriteWidth: usize, _spriteHeight: usize) !Self {
-    const texture = try GameState.getAlloc().create(rl.Texture2D);
+pub fn init(_alloc: std.mem.Allocator, _path: [:0]const u8, _numSpritesHorizontal: usize, _numSpritesVertical: usize, _spriteWidth: usize, _spriteHeight: usize) !Self {
+    const texture = try _alloc.create(rl.Texture2D);
     texture.* = rl.loadTexture(_path);
     return Self{
         .spritesheet = texture,

@@ -13,13 +13,14 @@ frames: std.ArrayList(rl.Rectangle) = undefined,
 const Self = @This();
 
 pub fn init(
+    _alloc: std.mem.Allocator,
     _name: []const u8,
     _spritesheet: *Spritesheet,
     _duration: f32,
     _spriteIndices: []const usize,
     _loop: bool,
 ) !Self {
-    var _frames: std.ArrayList(rl.Rectangle) = std.ArrayList(rl.Rectangle).init(GameState.getAlloc());
+    var _frames: std.ArrayList(rl.Rectangle) = std.ArrayList(rl.Rectangle).init(_alloc);
     for (_spriteIndices) |index| {
         try _frames.append(rl.Rectangle{
             .x = @mod(@as(f32, @floatFromInt(index)), @as(f32, @floatFromInt(_spritesheet.numSpritesHorizontal))) * @as(f32, @floatFromInt(_spritesheet.spriteWidth)),

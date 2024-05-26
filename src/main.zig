@@ -9,11 +9,14 @@ const GameState = @import("GameState.zig");
 const screenWidth = 800;
 const screenHeight = 450;
 
+var ressourceArena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+pub const ressourceAlloc = ressourceArena.allocator();
+
 pub fn main() !void {
     rl.initWindow(screenWidth, screenHeight, "Shooty");
     defer rl.closeWindow();
     rl.setTargetFPS(60);
-    var gs = try GameState.init();
+    var gs = try GameState.init(ressourceAlloc);
     while (!rl.windowShouldClose()) {
 
         //update
@@ -32,6 +35,7 @@ pub fn main() !void {
         rl.endDrawing();
     }
     gs.deinit();
+    ressourceArena.deinit();
 }
 
 fn drawGUI(gs: *GameState) void {
