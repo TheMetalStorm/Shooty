@@ -18,28 +18,25 @@ const screenWidth = 800;
 const screenHeight = 450;
 
 pub fn init() !Self {
-    const _player = Player.init(
-        150.0,
-        150.0,
-        rl.Color.red,
-    );
+    var ret = Self{ .camera = undefined, .player = undefined, .enemies = undefined, .bullets = undefined, .spritesheets = undefined, .score = 0 };
+    const _player = Player.init(150.0, 150.0, rl.Color.red, &ret);
     var _spritesheets = std.StringHashMap(*rl.Texture2D).init(arenaAlloc);
 
     //INFO: Set the spritesheets here
     try _spritesheets.put("laser-bolts", try createSpritesheet("src/assets/spritesheets/laser-bolts.png"));
+    try _spritesheets.put("explosion", try createSpritesheet("src/assets/spritesheets/explosion.png"));
 
-    return Self{
-        .player = _player,
-        .camera = rl.Camera2D{
-            .target = _player.pos,
-            .offset = rl.Vector2.init(screenWidth / 2, screenHeight / 2),
-            .rotation = 0,
-            .zoom = 1,
-        },
-        .enemies = std.ArrayList(Enemy).init(arenaAlloc),
-        .bullets = std.ArrayList(Bullet).init(arenaAlloc),
-        .spritesheets = _spritesheets,
+    ret.player = _player;
+    ret.camera = rl.Camera2D{
+        .target = _player.pos,
+        .offset = rl.Vector2.init(screenWidth / 2, screenHeight / 2),
+        .rotation = 0,
+        .zoom = 1,
     };
+    ret.enemies = std.ArrayList(Enemy).init(arenaAlloc);
+    ret.bullets = std.ArrayList(Bullet).init(arenaAlloc);
+    ret.spritesheets = _spritesheets;
+    return ret;
 }
 
 fn createSpritesheet(path: [:0]const u8) !*rl.Texture2D {
@@ -51,7 +48,8 @@ fn createSpritesheet(path: [:0]const u8) !*rl.Texture2D {
 pub fn deinit(self: *Self) void {
     self.player.deinit();
     for (self.bullets.items) |*bullet| {
-        bullet.deinit();
+        if (bullet.active)
+            bullet.deinit();
     }
     arena.deinit();
 }
@@ -60,14 +58,15 @@ pub fn update(self: *Self, dt: f32) !void {
     try self.player.update(self, dt);
 
     for (self.bullets.items) |*bullet| {
-        bullet.update(dt);
+        if (bullet.active)
+            bullet.update(dt);
     }
 
     if (self.enemies.items.len < 10) {
         //TODO: better logic for enemy spawn position
         const x: f32 = @floatFromInt(rl.getRandomValue(@intFromFloat(self.player.pos.x - screenWidth), @intFromFloat(self.player.pos.x + screenWidth)));
         const y: f32 = @floatFromInt(rl.getRandomValue(@intFromFloat(self.player.pos.y - screenHeight), @intFromFloat(self.player.pos.y + screenHeight)));
-        try self.enemies.append(Enemy.init(x, y, rl.Color.green, 3));
+        try self.enemies.append(Enemy.init(x, y, rl.Color.green, 1));
     }
 
     for (self.enemies.items, 0..) |*enemy, index| {
@@ -82,7 +81,8 @@ pub fn update(self: *Self, dt: f32) !void {
 
 pub fn render(self: *Self, dt: f32) void {
     for (self.bullets.items) |*bullet| {
-        bullet.render(dt);
+        if (bullet.active)
+            bullet.render(dt);
     }
 
     self.player.render();

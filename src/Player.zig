@@ -6,6 +6,7 @@ const GameState = @import("GameState.zig");
 
 pos: rl.Vector2,
 color: rl.Color,
+gs: *const GameState,
 
 const shipIdleSpriteRect: rl.Rectangle = rl.Rectangle.init(31.0, 0.0, 16, 24);
 const speed = 100.0;
@@ -19,9 +20,9 @@ pub fn getLookDir(_: *Self) rl.Vector2 {
     return lookDir;
 }
 
-pub fn init(_x: f32, _y: f32, _color: rl.Color) Self {
+pub fn init(_x: f32, _y: f32, _color: rl.Color, _gs: *const GameState) Self {
     texture = rl.Texture2D.init("src/assets/spritesheets/ship.png");
-    return Self{ .pos = rl.Vector2.init(_x, _y), .color = _color };
+    return Self{ .pos = rl.Vector2.init(_x, _y), .color = _color, .gs = _gs };
 }
 
 pub fn update(self: *Self, gs: *GameState, dt: f32) !void {

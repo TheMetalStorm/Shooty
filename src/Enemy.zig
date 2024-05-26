@@ -30,21 +30,16 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) void {
 
 pub fn checkCollisions(self: *Self, gs: *GameState, enemyIndex: usize) void {
     //bullet collision
-    for (gs.bullets.items, 0..) |bullet, bulletIndex| {
-        if (rl.checkCollisionCircles(bullet.pos, bullet.radius, self.pos, self.radius)) {
+    for (gs.bullets.items) |*bullet| {
+        if (!bullet.markedDead and rl.checkCollisionCircles(bullet.pos, bullet.radius, self.pos, self.radius)) {
             self.health -= 1;
             if (self.health <= 0) {
                 _ = gs.enemies.orderedRemove(enemyIndex);
                 gs.score += 1;
             }
-            _ = gs.bullets.orderedRemove(bulletIndex);
+            bullet.markedDead = true;
         }
     }
-}
-
-pub fn checkBulletCollision(self: *Self, bullet: *Bullet) bool {
-    const distance = rl.Vector2Distance(rl.Vector2{ .x = self.pos.x, .y = self.pos.y }, rl.Vector2{ .x = bullet.x, .y = bullet.y });
-    return distance < 15.0;
 }
 
 pub fn render(self: *Self) void {
