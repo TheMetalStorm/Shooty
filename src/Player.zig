@@ -44,7 +44,7 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) !void {
     }
 
     if (rl.isMouseButtonPressed(rl.MouseButton.mouse_button_left)) {
-        var spawned = try Bullet.init(self.pos.x, self.pos.y, lookDir, bulletSpeed, rl.Color.blue);
+        var spawned = try Bullet.init(self.pos.x, self.pos.y, lookDir, bulletSpeed, rl.Color.blue, gs);
         spawned.setAnimation("normal");
         try gs.bullets.append(spawned);
     }

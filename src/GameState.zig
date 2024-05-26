@@ -9,6 +9,7 @@ camera: rl.Camera2D,
 player: Player,
 enemies: std.ArrayList(Enemy),
 bullets: std.ArrayList(Bullet),
+spritesheets: std.StringHashMap(*rl.Texture2D),
 score: i32 = 0,
 
 const Self = @This();
@@ -16,12 +17,17 @@ const Self = @This();
 const screenWidth = 800;
 const screenHeight = 450;
 
-pub fn init() Self {
+pub fn init() !Self {
     const _player = Player.init(
         150.0,
         150.0,
         rl.Color.red,
     );
+    var _spritesheets = std.StringHashMap(*rl.Texture2D).init(arenaAlloc);
+
+    //INFO: Set the spritesheets here
+    try _spritesheets.put("laser-bolts", try createSpritesheet("src/assets/spritesheets/laser-bolts.png"));
+
     return Self{
         .player = _player,
         .camera = rl.Camera2D{
@@ -32,7 +38,14 @@ pub fn init() Self {
         },
         .enemies = std.ArrayList(Enemy).init(arenaAlloc),
         .bullets = std.ArrayList(Bullet).init(arenaAlloc),
+        .spritesheets = _spritesheets,
     };
+}
+
+fn createSpritesheet(path: [:0]const u8) !*rl.Texture2D {
+    const texture = try arenaAlloc.create(rl.Texture2D);
+    texture.* = rl.loadTexture(path);
+    return texture;
 }
 
 pub fn deinit(self: *Self) void {
@@ -68,11 +81,11 @@ pub fn update(self: *Self, dt: f32) !void {
 }
 
 pub fn render(self: *Self, dt: f32) void {
-    self.player.render();
-
     for (self.bullets.items) |*bullet| {
         bullet.render(dt);
     }
+
+    self.player.render();
 
     for (self.enemies.items) |*enemy| {
         enemy.render();

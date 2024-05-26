@@ -13,8 +13,7 @@ pub fn main() !void {
     rl.initWindow(screenWidth, screenHeight, "Shooty");
     defer rl.closeWindow();
     rl.setTargetFPS(60);
-    var gs = GameState.init();
-
+    var gs = try GameState.init();
     while (!rl.windowShouldClose()) {
 
         //update

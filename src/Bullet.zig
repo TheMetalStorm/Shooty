@@ -14,24 +14,21 @@ animations: std.StringHashMap(*Animation) = std.StringHashMap(*Animation).init(G
 const Self = @This();
 const bulletSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 16);
 
-pub fn init(_x: f32, _y: f32, _dir: rl.Vector2, _v: f32, _color: rl.Color) !Self { //, _texture: rl.Texture2D) Self {
+pub fn init(_x: f32, _y: f32, _dir: rl.Vector2, _v: f32, _color: rl.Color, gs: *GameState) !Self { //, _texture: rl.Texture2D) Self {
 
-    const bulletTexture = try GameState.getAlloc().create(rl.Texture2D);
-    const b = rl.Texture2D.init("src/assets/spritesheets/laser-bolts.png");
-    bulletTexture.* = b;
-
-    const usedSprites = [2]usize{ 0, 1 };
-    const bulletAnimPointer = try GameState.getAlloc().create(Animation);
-    const bulletAnim = try Animation.init("normal", bulletTexture, 2, 2, 16, 16, 50, &usedSprites, true);
-    bulletAnimPointer.* = bulletAnim;
-    var a = Self{
+    var ret = Self{
         .pos = rl.Vector2.init(_x, _y),
         .dir = _dir,
         .v = _v,
         .color = _color,
     }; //, .texture = _texture };
-    try a.addAnimation(bulletAnimPointer.name, bulletAnimPointer);
-    return a;
+    const usedSprites = [2]usize{ 0, 1 };
+    const bulletAnimPointer = try GameState.getAlloc().create(Animation);
+    const bulletTexture = gs.spritesheets.get("laser-bolts") orelse return error.GenericError;
+    const bulletAnim = try Animation.init("normal", bulletTexture, 2, 2, 16, 16, 50, &usedSprites, true);
+    bulletAnimPointer.* = bulletAnim;
+    try ret.addAnimation(bulletAnimPointer.name, bulletAnimPointer);
+    return ret;
 }
 
 pub fn update(self: *Self, dt: f32) void {
