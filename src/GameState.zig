@@ -6,59 +6,41 @@ const std = @import("std");
 const Animation = @import("Animation.zig");
 const Spritesheet = @import("Spritesheet.zig");
 
-var levelArena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-pub const levelAlloc = levelArena.allocator();
 camera: rl.Camera2D,
 player: Player,
 enemies: std.ArrayList(Enemy),
 bullets: std.ArrayList(Bullet),
-spritesheets: std.StringHashMap(*Spritesheet),
-animations: std.StringHashMap(*Animation),
+spritesheets: *std.StringHashMap(*Spritesheet),
+animations: *std.StringHashMap(*Animation),
+
 score: i32 = 0,
 
+wasReset: bool = false,
 const Self = @This();
 const screenWidth = 800;
 const screenHeight = 450;
 
-pub fn init(_alloc: std.mem.Allocator) !Self {
-    var ret = Self{ .camera = undefined, .player = undefined, .enemies = undefined, .bullets = undefined, .spritesheets = undefined, .score = 0, .animations = undefined };
-    const _player = Player.init(150.0, 150.0, rl.Color.red, &ret);
-    var _spritesheets = std.StringHashMap(*Spritesheet).init(_alloc);
-    var _animations = std.StringHashMap(*Animation).init(_alloc);
+var levelArena: std.heap.ArenaAllocator = undefined;
+var levelAlloc: std.mem.Allocator = undefined;
 
-    //INFO: Set the spritesheets heres
-    try _spritesheets.put("laser-bolts", try createSpritesheet(_alloc, "src/assets/spritesheets/laser-bolts.png", 2, 2, 16, 16));
-    try _spritesheets.put("explosion", try createSpritesheet(_alloc, "src/assets/spritesheets/explosion.png", 5, 1, 16, 16));
+pub fn init(_spritesheets: *std.StringHashMap(*Spritesheet), _animations: *std.StringHashMap(*Animation)) !Self {
+    levelArena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    levelAlloc = levelArena.allocator();
+    const _player = Player.init(&levelAlloc, 150.0, 150.0, rl.Color.red);
 
-    //INFO: Set the Animations here
-    try _animations.put("bullet_normal", try createAnimation(_alloc, "bullet_normal", _spritesheets.get("laser-bolts").?, 50, &[_]usize{ 0, 1 }, true));
-    try _animations.put("bullet_die", try createAnimation(_alloc, "bullet_die", _spritesheets.get("explosion").?, 30, &[_]usize{ 0, 1, 2, 3, 4 }, false));
-
-    ret.player = _player;
-    ret.camera = rl.Camera2D{
-        .target = _player.pos,
-        .offset = rl.Vector2.init(screenWidth / 2, screenHeight / 2),
-        .rotation = 0,
-        .zoom = 1,
+    return Self{
+        .player = _player,
+        .camera = rl.Camera2D{
+            .target = _player.pos,
+            .offset = rl.Vector2.init(screenWidth / 2, screenHeight / 2),
+            .rotation = 0,
+            .zoom = 1,
+        },
+        .enemies = std.ArrayList(Enemy).init(levelAlloc),
+        .bullets = std.ArrayList(Bullet).init(levelAlloc),
+        .spritesheets = _spritesheets,
+        .animations = _animations,
     };
-    ret.enemies = std.ArrayList(Enemy).init(levelAlloc);
-    ret.bullets = std.ArrayList(Bullet).init(levelAlloc);
-    ret.spritesheets = _spritesheets;
-    ret.animations = _animations;
-
-    return ret;
-}
-
-fn createSpritesheet(alloc: std.mem.Allocator, path: [:0]const u8, numW: usize, numH: usize, spriteWidth: usize, spriteHeight: usize) !*Spritesheet {
-    const spritesheetPtr = try alloc.create(Spritesheet);
-    spritesheetPtr.* = try Spritesheet.init(alloc, path, numW, numH, spriteWidth, spriteHeight);
-    return spritesheetPtr;
-}
-
-fn createAnimation(alloc: std.mem.Allocator, name: [:0]const u8, spritesheet: *Spritesheet, length: f32, spriteIndices: []const usize, loop: bool) !*Animation {
-    const animPtr = try alloc.create(Animation);
-    animPtr.* = try Animation.init(alloc, name, spritesheet, length, spriteIndices, loop);
-    return animPtr;
 }
 
 pub fn deinit(_: *Self) void {
@@ -72,6 +54,11 @@ pub fn deinit(_: *Self) void {
 }
 
 pub fn update(self: *Self, dt: f32) !void {
+    if (self.score == 2) {
+        try self.resetLevel();
+        return;
+    }
+
     try self.player.update(self, dt);
 
     for (self.bullets.items) |*bullet| {
@@ -79,7 +66,8 @@ pub fn update(self: *Self, dt: f32) !void {
             bullet.update(dt);
     }
 
-    if (self.enemies.items.len < 10) {
+    if (self.enemies.items.len < 100) {
+
         //TODO: better logic for enemy spawn position
         const x: f32 = @floatFromInt(rl.getRandomValue(@intFromFloat(self.player.pos.x - screenWidth), @intFromFloat(self.player.pos.x + screenWidth)));
         const y: f32 = @floatFromInt(rl.getRandomValue(@intFromFloat(self.player.pos.y - screenHeight), @intFromFloat(self.player.pos.y + screenHeight)));
@@ -96,7 +84,19 @@ pub fn update(self: *Self, dt: f32) !void {
     self.camera.target.y += (self.player.pos.y - self.camera.target.y) * lerp * dt;
 }
 
+pub fn resetLevel(self: *Self) !void {
+    self.wasReset = true;
+    self.score = 0;
+    levelArena.deinit();
+
+    self.* = try Self.init(self.spritesheets, self.animations);
+}
+
 pub fn render(self: *Self, dt: f32) !void {
+    if (self.wasReset) {
+        self.wasReset = false;
+        return;
+    }
     for (self.bullets.items) |*bullet| {
         if (bullet.active)
             try bullet.render(dt);
@@ -107,8 +107,4 @@ pub fn render(self: *Self, dt: f32) !void {
     for (self.enemies.items) |*enemy| {
         enemy.render();
     }
-}
-
-pub fn getAlloc() std.mem.Allocator {
-    return levelAlloc;
 }

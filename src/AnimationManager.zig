@@ -7,9 +7,9 @@ const Self = @This();
 
 currentAnimation: *Animation = undefined,
 animations: std.StringHashMap(*Animation) = undefined,
-
-pub fn init() !Self {
-    return Self{ .animations = std.StringHashMap(*Animation).init(GameState.getAlloc()) };
+alloc: *std.mem.Allocator,
+pub fn init(_alloc: *std.mem.Allocator) !Self {
+    return Self{ .animations = std.StringHashMap(*Animation).init(_alloc.*), .alloc = _alloc };
 }
 
 pub fn playCurrent(self: *Self, dest: rl.Rectangle, origin: rl.Vector2, rotation: f32, color: rl.Color, dt: f32) void {
@@ -34,10 +34,9 @@ pub fn playCurrent(self: *Self, dest: rl.Rectangle, origin: rl.Vector2, rotation
 }
 
 pub fn setCurrent(self: *Self, name: []const u8) !void {
-    const curr = try GameState.getAlloc().create(Animation);
+    const curr = try self.alloc.create(Animation);
 
     curr.* = self.animations.get(name).?.*;
-    std.debug.print("{?}\n", .{curr});
     self.currentAnimation = curr;
 }
 

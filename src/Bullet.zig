@@ -16,28 +16,29 @@ active: bool = true,
 gs: *GameState,
 lifetime: f32 = 2,
 lifetimer: f32 = 0,
+alloc: *std.mem.Allocator,
 
 const Self = @This();
 const bulletSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 16);
 
 pub fn init(
+    _alloc: *std.mem.Allocator,
     _x: f32,
     _y: f32,
     _dir: rl.Vector2,
     _v: f32,
     _color: rl.Color,
     _gs: *GameState,
-) !Self { //, _texture: rl.Texture2D) Self {
-
-    const _animManagerPtr = try GameState.getAlloc().create(AnimationManager);
-    var _animManager = try AnimationManager.init();
+) !Self {
+    const _animManagerPtr = try _alloc.create(AnimationManager);
+    var _animManager = try AnimationManager.init(_alloc);
 
     try _animManager.registerAnimation("bullet_normal", _gs.animations.get("bullet_normal").?);
     try _animManager.registerAnimation("bullet_die", _gs.animations.get("bullet_die").?);
 
     _animManagerPtr.* = _animManager;
 
-    return Self{ .pos = rl.Vector2.init(_x, _y), .dir = _dir, .v = _v, .color = _color, .gs = _gs, .animManager = _animManagerPtr }; //, .texture = _texture };
+    return Self{ .alloc = _alloc, .pos = rl.Vector2.init(_x, _y), .dir = _dir, .v = _v, .color = _color, .gs = _gs, .animManager = _animManagerPtr };
 }
 
 pub fn update(self: *Self, dt: f32) void {
@@ -72,8 +73,4 @@ pub fn render(self: *Self, dt: f32) !void {
     }
     const angle = @mod(std.math.radiansToDegrees(std.math.atan2(self.dir.y, self.dir.x)) + 360 + 90, 360); // 90 is the offset to make the ship face the mouse
     self.animManager.playCurrent(rl.Rectangle.init(self.pos.x, self.pos.y, bulletSpriteRect.width * sizeMult, bulletSpriteRect.height * sizeMult), rl.Vector2.init(bulletSpriteRect.width * sizeMult / 2, bulletSpriteRect.height * sizeMult / 2), angle, rl.Color.white, dt);
-}
-
-pub fn deinit(self: *Self) void {
-    self.animManager.deinit();
 }

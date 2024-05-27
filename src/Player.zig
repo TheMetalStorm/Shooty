@@ -6,8 +6,7 @@ const GameState = @import("GameState.zig");
 
 pos: rl.Vector2,
 color: rl.Color,
-gs: *const GameState,
-
+alloc: *std.mem.Allocator,
 const shipIdleSpriteRect: rl.Rectangle = rl.Rectangle.init(31.0, 0.0, 16, 24);
 const speed = 100.0;
 const bulletSpeed = 200.0;
@@ -20,9 +19,9 @@ pub fn getLookDir(_: *Self) rl.Vector2 {
     return lookDir;
 }
 
-pub fn init(_x: f32, _y: f32, _color: rl.Color, _gs: *const GameState) Self {
-    texture = rl.Texture2D.init("src/assets/spritesheets/ship.png");
-    return Self{ .pos = rl.Vector2.init(_x, _y), .color = _color, .gs = _gs };
+pub fn init(_alloc: *std.mem.Allocator, _x: f32, _y: f32, _color: rl.Color) Self {
+    //texture = rl.Texture2D.init("src/assets/spritesheets/ship.png");
+    return Self{ .pos = rl.Vector2.init(_x, _y), .color = _color, .alloc = _alloc };
 }
 
 pub fn update(self: *Self, gs: *GameState, dt: f32) !void {
@@ -45,7 +44,7 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) !void {
     }
 
     if (rl.isMouseButtonPressed(rl.MouseButton.mouse_button_left)) {
-        var spawned = try Bullet.init(self.pos.x, self.pos.y, lookDir, bulletSpeed, rl.Color.blue, gs);
+        var spawned = try Bullet.init(self.alloc, self.pos.x, self.pos.y, lookDir, bulletSpeed, rl.Color.blue, gs);
         try spawned.animManager.setCurrent("bullet_normal");
         try gs.bullets.append(spawned);
     }
@@ -58,5 +57,5 @@ pub fn render(self: *Self) void {
 }
 
 pub fn deinit(_: *Self) void {
-    rl.unloadTexture(texture);
+    //rl.unloadTexture(texture);
 }
