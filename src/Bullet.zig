@@ -60,6 +60,7 @@ pub fn update(self: *Self, dt: f32) void {
 pub fn render(self: *Self, dt: f32) !void {
     if (self.animManager.animations.count() == 0) return;
     const sizeMult = 4;
+    const angle = @mod(std.math.radiansToDegrees(std.math.atan2(self.dir.y, self.dir.x)) + 360 + 90, 360); // 90 is the offset to make the ship face the mouse
 
     if (self.markedDead == true) {
         if (!std.mem.eql(u8, self.animManager.currentAnimation.name, "bullet_die")) {
@@ -68,9 +69,6 @@ pub fn render(self: *Self, dt: f32) !void {
         if (self.animManager.isCurrentDone()) {
             return;
         }
-        self.animManager.playCurrent(rl.Rectangle.init(self.pos.x, self.pos.y, bulletSpriteRect.width * sizeMult, bulletSpriteRect.height * sizeMult), rl.Vector2.init(bulletSpriteRect.width * sizeMult / 2, bulletSpriteRect.height * sizeMult / 2), 0, rl.Color.white, dt);
-        return;
     }
-    const angle = @mod(std.math.radiansToDegrees(std.math.atan2(self.dir.y, self.dir.x)) + 360 + 90, 360); // 90 is the offset to make the ship face the mouse
     self.animManager.playCurrent(rl.Rectangle.init(self.pos.x, self.pos.y, bulletSpriteRect.width * sizeMult, bulletSpriteRect.height * sizeMult), rl.Vector2.init(bulletSpriteRect.width * sizeMult / 2, bulletSpriteRect.height * sizeMult / 2), angle, rl.Color.white, dt);
 }

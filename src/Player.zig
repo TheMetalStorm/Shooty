@@ -20,7 +20,8 @@ pub fn getLookDir(_: *Self) rl.Vector2 {
 }
 
 pub fn init(_alloc: *std.mem.Allocator, _x: f32, _y: f32, _color: rl.Color) Self {
-    //texture = rl.Texture2D.init("src/assets/spritesheets/ship.png");
+    //TODO: Load texture in a better way with global texture manager
+    texture = rl.Texture2D.init("src/assets/spritesheets/ship.png");
     return Self{ .pos = rl.Vector2.init(_x, _y), .color = _color, .alloc = _alloc };
 }
 
@@ -57,5 +58,5 @@ pub fn render(self: *Self) void {
 }
 
 pub fn deinit(_: *Self) void {
-    //rl.unloadTexture(texture);
+    rl.unloadTexture(texture);
 }
