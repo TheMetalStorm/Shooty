@@ -20,9 +20,7 @@ pub fn init() !void {
     try spritesheets.put("SpaceShooterAssetPack_Characters", try createSpritesheet(ressourceAlloc, "src/assets/SpaceShooterAssets/SpaceShooterAssetPack_Characters.png", 5, 10, 8, 8));
 
     //INFO: Set the Animations here
-    try animations.put("ship_normal", try createAnimation(ressourceAlloc, "ship_normal", spritesheets.get("ship").?, 1000, &[_]usize{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }, true));
-    try animations.put("test", try createAnimation(ressourceAlloc, "test", spritesheets.get("SpaceShooterAssetPack_Characters").?, 1000, &[_]usize{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }, true));
-
+    try animations.put("ship_normal", try createAnimation(ressourceAlloc, "ship_normal", spritesheets.get("ship").?, 10, &[_]usize{ 2, 7 }, true));
     try animations.put("bullet_normal", try createAnimation(ressourceAlloc, "bullet_normal", spritesheets.get("laser-bolts").?, 50, &[_]usize{ 0, 1 }, true));
     try animations.put("bullet_die", try createAnimation(ressourceAlloc, "bullet_die", spritesheets.get("explosion").?, 30, &[_]usize{ 0, 1, 2, 3, 4 }, false));
 }
