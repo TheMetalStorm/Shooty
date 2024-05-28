@@ -3,11 +3,15 @@ const rm = @import("raylib-math");
 const std = @import("std");
 const Bullet = @import("Bullet.zig");
 const GameState = @import("GameState.zig");
+const AnimationManager = @import("AnimationManager.zig");
+const RessourceManager = @import("RessourceManager.zig");
 
 pos: rl.Vector2,
 color: rl.Color,
 alloc: *std.mem.Allocator,
-const shipIdleSpriteRect: rl.Rectangle = rl.Rectangle.init(31.0, 0.0, 16, 24);
+animManager: *AnimationManager,
+
+const shipIdleSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 24);
 const speed = 100.0;
 const bulletSpeed = 200.0;
 const Self = @This();
@@ -19,10 +23,16 @@ pub fn getLookDir(_: *Self) rl.Vector2 {
     return lookDir;
 }
 
-pub fn init(_alloc: *std.mem.Allocator, _x: f32, _y: f32, _color: rl.Color) Self {
+pub fn init(_alloc: *std.mem.Allocator, _x: f32, _y: f32, _color: rl.Color) !Self {
     //TODO: Load texture in a better way with global texture manager
-    texture = rl.Texture2D.init("src/assets/spritesheets/ship.png");
-    return Self{ .pos = rl.Vector2.init(_x, _y), .color = _color, .alloc = _alloc };
+    const _animManagerPtr = try _alloc.create(AnimationManager);
+    var _animManager = try AnimationManager.init(_alloc);
+
+    try _animManager.registerAnimation("ship_normal", try RessourceManager.getAnimation("ship_normal"));
+    try _animManager.setCurrent("ship_normal");
+
+    _animManagerPtr.* = _animManager;
+    return Self{ .pos = rl.Vector2.init(_x, _y), .color = _color, .alloc = _alloc, .animManager = _animManagerPtr };
 }
 
 pub fn update(self: *Self, gs: *GameState, dt: f32) !void {
@@ -51,10 +61,12 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) !void {
     }
 }
 
-pub fn render(self: *Self) void {
+pub fn render(self: *Self, dt: f32) void {
+    if (self.animManager.animations.count() == 0) return;
+
     const viewAngle = @mod(std.math.radiansToDegrees(std.math.atan2(lookDir.y, lookDir.x)) + 360 + 90, 360); // 90 is the offset to make the ship face the mouse
     const sizeMult = 2;
-    rl.drawTexturePro(texture, shipIdleSpriteRect, rl.Rectangle.init(self.pos.x, self.pos.y, shipIdleSpriteRect.width * sizeMult, shipIdleSpriteRect.height * sizeMult), rl.Vector2.init(shipIdleSpriteRect.width * sizeMult / 2, shipIdleSpriteRect.height * sizeMult / 2), viewAngle, rl.Color.white);
+    self.animManager.playCurrent(rl.Rectangle.init(self.pos.x, self.pos.y, shipIdleSpriteRect.width * sizeMult, shipIdleSpriteRect.height * sizeMult), rl.Vector2.init(shipIdleSpriteRect.width * sizeMult / 2, shipIdleSpriteRect.height * sizeMult / 2), viewAngle, rl.Color.white, dt);
 }
 
 pub fn deinit(_: *Self) void {

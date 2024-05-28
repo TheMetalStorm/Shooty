@@ -16,7 +16,9 @@ pub fn playCurrent(self: *Self, dest: rl.Rectangle, origin: rl.Vector2, rotation
     if (self.currentAnimation.frames.items.len == 0) {
         return;
     }
+    // if (!rl.isKeyDown(rl.KeyboardKey.key_space)) {
     self.currentAnimation.playedTime += dt * 100;
+    // }
 
     if (self.currentAnimation.playedTime >= self.currentAnimation.duration) {
         if (self.currentAnimation.loop) {
@@ -31,6 +33,7 @@ pub fn playCurrent(self: *Self, dest: rl.Rectangle, origin: rl.Vector2, rotation
     const currentFrame = @as(usize, @intFromFloat(@divFloor(self.currentAnimation.playedTime, self.currentAnimation.frameTime)));
 
     rl.drawTexturePro(self.currentAnimation.spritesheet.spritesheet.*, self.currentAnimation.frames.items[currentFrame], dest, origin, rotation, color);
+    // rl.drawText(rl.textFormat("Current Frame: %02i", .{currentFrame}), rl.getWorldToScreen2D(position: Vector2, camera: Camera2D)@as(i32, @intFromFloat(self.currentAnimation.frames.items[currentFrame].x)) + 20, @as(i32, @intFromFloat(self.currentAnimation.frames.items[currentFrame].y)) + 20, 20, rl.Color.red);
 }
 
 pub fn setCurrent(self: *Self, name: []const u8) !void {

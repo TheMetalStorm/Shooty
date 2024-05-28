@@ -24,7 +24,7 @@ pub fn init(
     for (_spriteIndices) |index| {
         try _frames.append(rl.Rectangle{
             .x = @mod(@as(f32, @floatFromInt(index)), @as(f32, @floatFromInt(_spritesheet.numSpritesHorizontal))) * @as(f32, @floatFromInt(_spritesheet.spriteWidth)),
-            .y = @floor(@as(f32, @floatFromInt(index)) / @as(f32, @floatFromInt(_spritesheet.numSpritesVertical))) * @as(f32, @floatFromInt(_spritesheet.spriteHeight)),
+            .y = @as(f32, @floatFromInt(index / _spritesheet.numSpritesHorizontal)) * @as(f32, @floatFromInt(_spritesheet.spriteHeight)),
             .width = @as(f32, @floatFromInt(_spritesheet.spriteWidth)),
             .height = @as(f32, @floatFromInt(_spritesheet.spriteHeight)),
         });

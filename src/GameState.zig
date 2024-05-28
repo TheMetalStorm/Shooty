@@ -23,7 +23,7 @@ pub fn init() !Self {
     levelArena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     levelAlloc = levelArena.allocator();
 
-    const _player = Player.init(&levelAlloc, 150.0, 150.0, rl.Color.red);
+    const _player = try Player.init(&levelAlloc, 150.0, 150.0, rl.Color.red);
 
     return Self{
         .player = _player,
@@ -61,7 +61,7 @@ pub fn update(self: *Self, dt: f32) !void {
             bullet.update(dt);
     }
 
-    if (self.enemies.items.len < 100) {
+    if (self.enemies.items.len < 50) {
 
         //TODO: better logic for enemy spawn position
         const x: f32 = @floatFromInt(rl.getRandomValue(@intFromFloat(self.player.pos.x - screenWidth), @intFromFloat(self.player.pos.x + screenWidth)));
@@ -97,7 +97,7 @@ pub fn render(self: *Self, dt: f32) !void {
             try bullet.render(dt);
     }
 
-    self.player.render();
+    self.player.render(dt);
 
     for (self.enemies.items) |*enemy| {
         enemy.render();
