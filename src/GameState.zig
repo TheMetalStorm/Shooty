@@ -3,15 +3,11 @@ const Enemy = @import("Enemy.zig");
 const Bullet = @import("Bullet.zig");
 const rl = @import("raylib");
 const std = @import("std");
-const Animation = @import("Animation.zig");
-const Spritesheet = @import("Spritesheet.zig");
 
 camera: rl.Camera2D,
 player: Player,
 enemies: std.ArrayList(Enemy),
 bullets: std.ArrayList(Bullet),
-spritesheets: *std.StringHashMap(*Spritesheet),
-animations: *std.StringHashMap(*Animation),
 
 score: i32 = 0,
 
@@ -23,9 +19,10 @@ const screenHeight = 450;
 var levelArena: std.heap.ArenaAllocator = undefined;
 var levelAlloc: std.mem.Allocator = undefined;
 
-pub fn init(_spritesheets: *std.StringHashMap(*Spritesheet), _animations: *std.StringHashMap(*Animation)) !Self {
+pub fn init() !Self {
     levelArena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     levelAlloc = levelArena.allocator();
+
     const _player = Player.init(&levelAlloc, 150.0, 150.0, rl.Color.red);
 
     return Self{
@@ -38,8 +35,6 @@ pub fn init(_spritesheets: *std.StringHashMap(*Spritesheet), _animations: *std.S
         },
         .enemies = std.ArrayList(Enemy).init(levelAlloc),
         .bullets = std.ArrayList(Bullet).init(levelAlloc),
-        .spritesheets = _spritesheets,
-        .animations = _animations,
     };
 }
 
@@ -89,7 +84,7 @@ pub fn resetLevel(self: *Self) !void {
     self.score = 0;
     levelArena.deinit();
 
-    self.* = try Self.init(self.spritesheets, self.animations);
+    self.* = try Self.init();
 }
 
 pub fn render(self: *Self, dt: f32) !void {

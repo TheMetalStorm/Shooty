@@ -3,6 +3,7 @@ const std = @import("std");
 const GameState = @import("GameState.zig");
 const Animation = @import("Animation.zig");
 const AnimationManager = @import("AnimationManager.zig");
+const RessourceManager = @import("RessourceManager.zig");
 
 pos: rl.Vector2,
 v: f32,
@@ -13,7 +14,6 @@ animManager: *AnimationManager,
 
 markedDead: bool = false,
 active: bool = true,
-gs: *GameState,
 lifetime: f32 = 2,
 lifetimer: f32 = 0,
 alloc: *std.mem.Allocator,
@@ -28,17 +28,16 @@ pub fn init(
     _dir: rl.Vector2,
     _v: f32,
     _color: rl.Color,
-    _gs: *GameState,
 ) !Self {
     const _animManagerPtr = try _alloc.create(AnimationManager);
     var _animManager = try AnimationManager.init(_alloc);
 
-    try _animManager.registerAnimation("bullet_normal", _gs.animations.get("bullet_normal").?);
-    try _animManager.registerAnimation("bullet_die", _gs.animations.get("bullet_die").?);
+    try _animManager.registerAnimation("bullet_normal", try RessourceManager.getAnimation("bullet_normal"));
+    try _animManager.registerAnimation("bullet_die", try RessourceManager.getAnimation("bullet_die"));
 
     _animManagerPtr.* = _animManager;
 
-    return Self{ .alloc = _alloc, .pos = rl.Vector2.init(_x, _y), .dir = _dir, .v = _v, .color = _color, .gs = _gs, .animManager = _animManagerPtr };
+    return Self{ .alloc = _alloc, .pos = rl.Vector2.init(_x, _y), .dir = _dir, .v = _v, .color = _color, .animManager = _animManagerPtr };
 }
 
 pub fn update(self: *Self, dt: f32) void {

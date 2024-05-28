@@ -6,30 +6,18 @@ const Bullet = @import("Bullet.zig");
 const Animation = @import("Animation.zig");
 const GameState = @import("GameState.zig");
 const Spritesheet = @import("Spritesheet.zig");
+const RessourceManager = @import("RessourceManager.zig");
 
 const screenWidth = 800;
 const screenHeight = 450;
-
-var ressourceArena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-pub const ressourceAlloc = ressourceArena.allocator();
 
 pub fn main() !void {
     rl.initWindow(screenWidth, screenHeight, "Shooty");
     defer rl.closeWindow();
     rl.setTargetFPS(60);
 
-    var _spritesheets = std.StringHashMap(*Spritesheet).init(ressourceAlloc);
-    var _animations = std.StringHashMap(*Animation).init(ressourceAlloc);
-
-    //INFO: Set the spritesheets heres
-    try _spritesheets.put("laser-bolts", try createSpritesheet(ressourceAlloc, "src/assets/spritesheets/laser-bolts.png", 2, 2, 16, 16));
-    try _spritesheets.put("explosion", try createSpritesheet(ressourceAlloc, "src/assets/spritesheets/explosion.png", 5, 1, 16, 16));
-
-    //INFO: Set the Animations here
-    try _animations.put("bullet_normal", try createAnimation(ressourceAlloc, "bullet_normal", _spritesheets.get("laser-bolts").?, 50, &[_]usize{ 0, 1 }, true));
-    try _animations.put("bullet_die", try createAnimation(ressourceAlloc, "bullet_die", _spritesheets.get("explosion").?, 30, &[_]usize{ 0, 1, 2, 3, 4 }, false));
-
-    var gs = try GameState.init(&_spritesheets, &_animations);
+    _ = try RessourceManager.init();
+    var gs = try GameState.init();
 
     while (!rl.windowShouldClose()) {
 
@@ -49,19 +37,7 @@ pub fn main() !void {
         rl.endDrawing();
     }
     gs.deinit();
-    ressourceArena.deinit();
-}
-
-fn createSpritesheet(alloc: std.mem.Allocator, path: [:0]const u8, numW: usize, numH: usize, spriteWidth: usize, spriteHeight: usize) !*Spritesheet {
-    const spritesheetPtr = try alloc.create(Spritesheet);
-    spritesheetPtr.* = try Spritesheet.init(alloc, path, numW, numH, spriteWidth, spriteHeight);
-    return spritesheetPtr;
-}
-
-fn createAnimation(alloc: std.mem.Allocator, name: [:0]const u8, spritesheet: *Spritesheet, length: f32, spriteIndices: []const usize, loop: bool) !*Animation {
-    const animPtr = try alloc.create(Animation);
-    animPtr.* = try Animation.init(alloc, name, spritesheet, length, spriteIndices, loop);
-    return animPtr;
+    RessourceManager.deinit();
 }
 
 fn drawGUI(gs: *GameState) void {
