@@ -8,8 +8,11 @@ const Self = @This();
 currentAnimation: *Animation = undefined,
 animations: std.StringHashMap(*Animation) = undefined,
 alloc: *std.mem.Allocator,
-pub fn init(_alloc: *std.mem.Allocator) !Self {
-    return Self{ .animations = std.StringHashMap(*Animation).init(_alloc.*), .alloc = _alloc };
+pub fn init(_alloc: *std.mem.Allocator) !*Self {
+    const _animManagerPtr = try _alloc.create(Self);
+    const _animManager = Self{ .animations = std.StringHashMap(*Animation).init(_alloc.*), .alloc = _alloc };
+    _animManagerPtr.* = _animManager;
+    return _animManagerPtr;
 }
 
 pub fn playCurrent(self: *Self, dest: rl.Rectangle, origin: rl.Vector2, rotation: f32, color: rl.Color, dt: f32) void {

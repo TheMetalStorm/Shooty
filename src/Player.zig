@@ -18,22 +18,18 @@ const Self = @This();
 
 var texture: rl.Texture2D = undefined;
 var lookDir: rl.Vector2 = undefined;
+var bulletTimer: f32 = 0;
+var bulletWaitTime: f32 = 0.5;
 
 pub fn getLookDir(_: *Self) rl.Vector2 {
     return lookDir;
 }
 
 pub fn init(_alloc: *std.mem.Allocator, _x: f32, _y: f32, _color: rl.Color) !Self {
-
-    //TODO: create this automatically
-    const _animManagerPtr = try _alloc.create(AnimationManager);
     var _animManager = try AnimationManager.init(_alloc);
-
     try _animManager.registerAnimation("ship_normal", try RessourceManager.getAnimation("ship_normal"));
     try _animManager.setCurrent("ship_normal");
-
-    _animManagerPtr.* = _animManager;
-    return Self{ .pos = rl.Vector2.init(_x, _y), .color = _color, .alloc = _alloc, .animManager = _animManagerPtr };
+    return Self{ .pos = rl.Vector2.init(_x, _y), .color = _color, .alloc = _alloc, .animManager = _animManager };
 }
 
 pub fn update(self: *Self, gs: *GameState, dt: f32) !void {
@@ -55,10 +51,18 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) !void {
         self.pos.y += speed * dt;
     }
 
-    if (rl.isMouseButtonPressed(rl.MouseButton.mouse_button_left)) {
-        var spawned = try Bullet.init(self.alloc, self.pos.x, self.pos.y, lookDir, bulletSpeed, rl.Color.blue);
-        try spawned.animManager.setCurrent("bullet_normal");
-        try gs.bullets.append(spawned);
+    if (rl.isMouseButtonDown(rl.MouseButton.mouse_button_left)) {
+        bulletTimer -= dt;
+        if (bulletTimer < 0) {
+            var spawned = try Bullet.init(self.alloc, self.pos.x, self.pos.y, lookDir, bulletSpeed, rl.Color.blue);
+            try spawned.animManager.setCurrent("bullet_normal");
+            try gs.bullets.append(spawned);
+            bulletTimer = bulletWaitTime;
+        }
+    }
+
+    if (rl.isMouseButtonReleased(rl.MouseButton.mouse_button_left)) {
+        bulletTimer = -1;
     }
 }
 

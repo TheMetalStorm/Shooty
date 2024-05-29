@@ -29,15 +29,12 @@ pub fn init(
     _v: f32,
     _color: rl.Color,
 ) !Self {
-    const _animManagerPtr = try _alloc.create(AnimationManager);
     var _animManager = try AnimationManager.init(_alloc);
 
     try _animManager.registerAnimation("bullet_normal", try RessourceManager.getAnimation("bullet_normal"));
     try _animManager.registerAnimation("bullet_die", try RessourceManager.getAnimation("bullet_die"));
 
-    _animManagerPtr.* = _animManager;
-
-    return Self{ .alloc = _alloc, .pos = rl.Vector2.init(_x, _y), .dir = _dir, .v = _v, .color = _color, .animManager = _animManagerPtr };
+    return Self{ .alloc = _alloc, .pos = rl.Vector2.init(_x, _y), .dir = _dir, .v = _v, .color = _color, .animManager = _animManager };
 }
 
 pub fn update(self: *Self, dt: f32) void {
