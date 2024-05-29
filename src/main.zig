@@ -10,7 +10,7 @@ const RessourceManager = @import("RessourceManager.zig");
 
 const screenWidth = 800;
 const screenHeight = 450;
-
+var isPaused = false;
 pub fn main() !void {
     rl.initWindow(screenWidth, screenHeight, "Shooty");
     defer rl.closeWindow();
@@ -21,6 +21,9 @@ pub fn main() !void {
     var gs = try GameState.init();
 
     while (!rl.windowShouldClose()) {
+        if (gameShouldPause()) {
+            continue;
+        }
 
         //update
         const dt = rl.getFrameTime();
@@ -60,4 +63,18 @@ fn setupRessources() !void {
     try RessourceManager.loadAnimation("ship_normal", "spritesheets/ship.png", 10, &[_]usize{ 2, 7 }, true);
     try RessourceManager.loadAnimation("bullet_normal", "spritesheets/laser-bolts.png", 50, &[_]usize{ 0, 1 }, true);
     try RessourceManager.loadAnimation("bullet_die", "spritesheets/explosion.png", 30, &[_]usize{ 0, 1, 2, 3, 4 }, false);
+}
+
+fn gameShouldPause() bool {
+    if (rl.isKeyPressed(rl.KeyboardKey.key_p)) {
+        isPaused = !isPaused;
+    }
+    if (isPaused) {
+        rl.beginDrawing();
+        rl.clearBackground(rl.Color.fromInt(0x052c46ff));
+        rl.drawText("PAUSED", screenWidth / 2 - 50, screenHeight / 2, 20, rl.Color.red);
+        rl.endDrawing();
+        return true;
+    }
+    return false;
 }

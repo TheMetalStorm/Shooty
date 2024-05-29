@@ -52,7 +52,6 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) !void {
         self.pos.y += speed * dt;
     }
 
-    std.debug.print("player: {any}\nbounds: {any}\n", .{ self.pos, self.levelBounds });
     if (self.pos.x < self.levelBounds.x + self.levelBounds.x / 2) {
         self.pos.x = self.levelBounds.x + self.levelBounds.x / 2;
     } else if (self.pos.x > self.levelBounds.width - self.levelBounds.x / 2) {
