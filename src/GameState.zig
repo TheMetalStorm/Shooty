@@ -59,7 +59,7 @@ pub fn deinit(_: *Self) void {
 }
 
 pub fn update(self: *Self, dt: f32) !void {
-    if (self.score == 10) {
+    if (self.score >= 10) {
         try self.resetLevel();
         return;
     }

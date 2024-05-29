@@ -14,6 +14,8 @@ var isPaused = false;
 pub fn main() !void {
     rl.initWindow(screenWidth, screenHeight, "Shooty");
     defer rl.closeWindow();
+    rl.initAudioDevice();
+    defer rl.closeAudioDevice();
     rl.setTargetFPS(60);
 
     try RessourceManager.init("src/assets/");
@@ -51,18 +53,20 @@ fn drawGUI(gs: *GameState) void {
 }
 
 fn setupRessources() !void {
-    //INFO: Set the spritesheets heres
+    //INFO: Spritesheets heres
     try RessourceManager.loadSpritesheet("spritesheets/ship.png", 5, 2, 16, 24);
     try RessourceManager.loadSpritesheet("spritesheets/laser-bolts.png", 2, 2, 16, 16);
     try RessourceManager.loadSpritesheet("spritesheets/explosion.png", 5, 1, 16, 16);
     try RessourceManager.loadSpritesheet("SpaceShooterAssets/SpaceShooterAssetPack_Characters.png", 5, 10, 8, 8);
     try RessourceManager.loadSpritesheet("SpaceShooterAssets/SpaceShooterAssetPack_BackGrounds.png", 3, 2, 128, 256);
 
-    //INFO: Set the Animations here
+    //INFO: Animations here
     try RessourceManager.loadAnimation("bg_1", "SpaceShooterAssets/SpaceShooterAssetPack_BackGrounds.png", 10, &[_]usize{1}, true);
     try RessourceManager.loadAnimation("ship_normal", "spritesheets/ship.png", 10, &[_]usize{ 2, 7 }, true);
     try RessourceManager.loadAnimation("bullet_normal", "spritesheets/laser-bolts.png", 50, &[_]usize{ 0, 1 }, true);
     try RessourceManager.loadAnimation("bullet_die", "spritesheets/explosion.png", 30, &[_]usize{ 0, 1, 2, 3, 4 }, false);
+
+    try RessourceManager.loadSound("bullet_fire", "music/bullet_fire.wav");
 }
 
 fn gameShouldPause() bool {

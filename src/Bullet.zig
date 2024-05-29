@@ -30,9 +30,11 @@ pub fn init(
     _color: rl.Color,
 ) !Self {
     var _animManager = try AnimationManager.init(_alloc);
-
     try _animManager.registerAnimation("bullet_normal", try RessourceManager.getAnimation("bullet_normal"));
     try _animManager.registerAnimation("bullet_die", try RessourceManager.getAnimation("bullet_die"));
+
+    const bulletSound = try RessourceManager.getSound("bullet_fire");
+    rl.playSound(bulletSound.*);
 
     return Self{ .alloc = _alloc, .pos = rl.Vector2.init(_x, _y), .dir = _dir, .v = _v, .color = _color, .animManager = _animManager };
 }

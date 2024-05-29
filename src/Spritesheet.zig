@@ -25,3 +25,7 @@ pub fn init(_alloc: std.mem.Allocator, _path: []const u8, _numSpritesHorizontal:
         .spriteHeight = _spriteHeight,
     };
 }
+
+pub fn deinit(self: *Self) void {
+    rl.unloadTexture(self.spritesheet.*);
+}
