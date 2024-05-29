@@ -15,7 +15,6 @@ pub fn init(_alloc: std.mem.Allocator, _path: []const u8, _numSpritesHorizontal:
     const pathLen = _path.len;
     const pathZeroTerminated = try _alloc.allocSentinel(u8, pathLen, 0);
     std.mem.copyForwards(u8, pathZeroTerminated, _path);
-    std.debug.print("cPath {s}\n", .{pathZeroTerminated});
 
     texture.* = rl.loadTexture(pathZeroTerminated);
     return Self{

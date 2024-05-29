@@ -10,6 +10,7 @@ pos: rl.Vector2,
 color: rl.Color,
 alloc: *std.mem.Allocator,
 animManager: *AnimationManager,
+levelBounds: rl.Rectangle,
 
 const shipIdleSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 24);
 const speed = 100.0;
@@ -25,11 +26,11 @@ pub fn getLookDir(_: *Self) rl.Vector2 {
     return lookDir;
 }
 
-pub fn init(_alloc: *std.mem.Allocator, _x: f32, _y: f32, _color: rl.Color) !Self {
+pub fn init(_alloc: *std.mem.Allocator, _x: f32, _y: f32, _color: rl.Color, _levelBounds: rl.Rectangle) !Self {
     var _animManager = try AnimationManager.init(_alloc);
     try _animManager.registerAnimation("ship_normal", try RessourceManager.getAnimation("ship_normal"));
     try _animManager.setCurrent("ship_normal");
-    return Self{ .pos = rl.Vector2.init(_x, _y), .color = _color, .alloc = _alloc, .animManager = _animManager };
+    return Self{ .pos = rl.Vector2.init(_x, _y), .color = _color, .alloc = _alloc, .animManager = _animManager, .levelBounds = _levelBounds };
 }
 
 pub fn update(self: *Self, gs: *GameState, dt: f32) !void {
@@ -49,6 +50,18 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) !void {
     }
     if (rl.isKeyDown(rl.KeyboardKey.key_s)) {
         self.pos.y += speed * dt;
+    }
+
+    std.debug.print("player: {any}\nbounds: {any}\n", .{ self.pos, self.levelBounds });
+    if (self.pos.x < self.levelBounds.x + self.levelBounds.x / 2) {
+        self.pos.x = self.levelBounds.x + self.levelBounds.x / 2;
+    } else if (self.pos.x > self.levelBounds.width - self.levelBounds.x / 2) {
+        self.pos.x = self.levelBounds.width - self.levelBounds.x / 2;
+    }
+    if (self.pos.y < self.levelBounds.y + self.levelBounds.y / 2) {
+        self.pos.y = self.levelBounds.y + self.levelBounds.y / 2;
+    } else if (self.pos.y > self.levelBounds.height - self.levelBounds.y / 2) {
+        self.pos.y = self.levelBounds.height - self.levelBounds.y / 2;
     }
 
     if (rl.isMouseButtonDown(rl.MouseButton.mouse_button_left)) {

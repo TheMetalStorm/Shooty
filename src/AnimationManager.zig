@@ -19,6 +19,12 @@ pub fn playCurrent(self: *Self, dest: rl.Rectangle, origin: rl.Vector2, rotation
     if (self.currentAnimation.frames.items.len == 0) {
         return;
     }
+
+    if (self.currentAnimation.frames.items.len == 1) {
+        rl.drawTexturePro(self.currentAnimation.spritesheet.spritesheet.*, self.currentAnimation.frames.items[0], dest, origin, rotation, color);
+        return;
+    }
+
     // if (!rl.isKeyDown(rl.KeyboardKey.key_space)) {
     self.currentAnimation.playedTime += dt * 100;
     // }

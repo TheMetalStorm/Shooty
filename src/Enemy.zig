@@ -9,7 +9,7 @@ pos: rl.Vector2,
 color: rl.Color,
 health: u16,
 radius: f32 = 15.0,
-const speed = 50;
+const speed = 80;
 
 const Self = @This();
 
