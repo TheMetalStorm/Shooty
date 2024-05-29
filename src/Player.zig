@@ -24,7 +24,8 @@ pub fn getLookDir(_: *Self) rl.Vector2 {
 }
 
 pub fn init(_alloc: *std.mem.Allocator, _x: f32, _y: f32, _color: rl.Color) !Self {
-    //TODO: Load texture in a better way with global texture manager
+
+    //TODO: create this automatically
     const _animManagerPtr = try _alloc.create(AnimationManager);
     var _animManager = try AnimationManager.init(_alloc);
 

@@ -19,6 +19,15 @@ const screenHeight = 450;
 var levelArena: std.heap.ArenaAllocator = undefined;
 var levelAlloc: std.mem.Allocator = undefined;
 
+//TODO: make game infinetly playable by addding more/faster/different enemies as the player progresses
+//TODO: maybe items? health packs, ammo, weapons, etc.
+
+//TODO: pause screen, game over screen when dead -> start at level one
+//TODO: make player vulnerable to enemy, blink when hurt and for a few seconds after being hit, invurnable for a few seconds after being hit
+//TODO: add sound effects, music
+//TODO: add background
+//TODO: ship it
+
 pub fn init() !Self {
     levelArena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     levelAlloc = levelArena.allocator();
@@ -39,17 +48,11 @@ pub fn init() !Self {
 }
 
 pub fn deinit(_: *Self) void {
-    //TODO: maybe useful when we have levels but not for now
-    // self.player.deinit();
-    // for (self.bullets.items) |*bullet| {
-    //     if (bullet.active)
-    //         bullet.deinit();
-    // }
-    // levelArena.deinit();
+    levelArena.deinit();
 }
 
 pub fn update(self: *Self, dt: f32) !void {
-    if (self.score == 2) {
+    if (self.score == 10) {
         try self.resetLevel();
         return;
     }
@@ -61,7 +64,7 @@ pub fn update(self: *Self, dt: f32) !void {
             bullet.update(dt);
     }
 
-    if (self.enemies.items.len < 50) {
+    if (self.enemies.items.len < 20) {
 
         //TODO: better logic for enemy spawn position
         const x: f32 = @floatFromInt(rl.getRandomValue(@intFromFloat(self.player.pos.x - screenWidth), @intFromFloat(self.player.pos.x + screenWidth)));
@@ -83,7 +86,6 @@ pub fn resetLevel(self: *Self) !void {
     self.wasReset = true;
     self.score = 0;
     levelArena.deinit();
-
     self.* = try Self.init();
 }
 
