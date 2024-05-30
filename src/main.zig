@@ -8,13 +8,16 @@ const GameState = @import("GameState.zig");
 const Spritesheet = @import("Spritesheet.zig");
 const RessourceManager = @import("RessourceManager.zig");
 
+const c = @cImport({
+    @cInclude("raylib.h");
+});
 const screenWidth = 800;
 const screenHeight = 450;
-var isPaused = false;
 pub fn main() !void {
     rl.initWindow(screenWidth, screenHeight, "Shooty");
     defer rl.closeWindow();
     rl.initAudioDevice();
+
     defer rl.closeAudioDevice();
     rl.setTargetFPS(60);
 
@@ -23,7 +26,11 @@ pub fn main() !void {
     var gs = try GameState.init();
 
     while (!rl.windowShouldClose()) {
-        if (gameShouldPause()) {
+        if (mainMenu(&gs)) {
+            continue;
+        }
+
+        if (gamePause(&gs)) {
             continue;
         }
 
@@ -59,24 +66,56 @@ fn setupRessources() !void {
     try RessourceManager.loadSpritesheet("spritesheets/explosion.png", 5, 1, 16, 16);
     try RessourceManager.loadSpritesheet("SpaceShooterAssets/SpaceShooterAssetPack_Characters.png", 5, 10, 8, 8);
     try RessourceManager.loadSpritesheet("SpaceShooterAssets/SpaceShooterAssetPack_BackGrounds.png", 3, 2, 128, 256);
+    try RessourceManager.loadSpritesheet("spritesheets/enemy-small.png", 2, 1, 16, 16);
+    try RessourceManager.loadSpritesheet("spritesheets/enemy-medium.png", 2, 1, 32, 16);
+    try RessourceManager.loadSpritesheet("spritesheets/enemy-big.png", 2, 1, 32, 32);
 
     //INFO: Animations here
     try RessourceManager.loadAnimation("bg_1", "SpaceShooterAssets/SpaceShooterAssetPack_BackGrounds.png", 10, &[_]usize{1}, true);
     try RessourceManager.loadAnimation("ship_normal", "spritesheets/ship.png", 10, &[_]usize{ 2, 7 }, true);
     try RessourceManager.loadAnimation("bullet_normal", "spritesheets/laser-bolts.png", 50, &[_]usize{ 0, 1 }, true);
     try RessourceManager.loadAnimation("bullet_die", "spritesheets/explosion.png", 30, &[_]usize{ 0, 1, 2, 3, 4 }, false);
+    try RessourceManager.loadAnimation("enemy_small", "spritesheets/enemy-small.png", 30, &[_]usize{ 0, 1 }, true);
+    try RessourceManager.loadAnimation("enemy_medium", "spritesheets/enemy-medium.png", 30, &[_]usize{ 0, 1 }, true);
+    try RessourceManager.loadAnimation("enemy_big", "spritesheets/enemy-big.png", 30, &[_]usize{ 0, 1 }, true);
 
     try RessourceManager.loadSound("bullet_fire", "music/bullet_fire.wav");
 }
 
-fn gameShouldPause() bool {
+fn gamePause(gs: *GameState) bool {
     if (rl.isKeyPressed(rl.KeyboardKey.key_p)) {
-        isPaused = !isPaused;
+        gs.isPaused = !gs.isPaused;
     }
-    if (isPaused) {
+    if (gs.isPaused) {
         rl.beginDrawing();
-        rl.clearBackground(rl.Color.fromInt(0x052c46ff));
+        rl.clearBackground(rl.Color.black);
         rl.drawText("PAUSED", screenWidth / 2 - 50, screenHeight / 2, 20, rl.Color.red);
+        rl.endDrawing();
+        return true;
+    }
+    return false;
+}
+
+fn mainMenu(gs: *GameState) bool {
+    if (gs.mainMenu) {
+        if (rl.isKeyPressed(rl.KeyboardKey.key_enter)) {
+            gs.mainMenu = false;
+            return false;
+        }
+
+        rl.beginDrawing();
+        rl.clearBackground(rl.Color.black);
+        const gameTitle = "Shooty";
+        const gameTitleFontSize: i32 = 30;
+        const enterText = "Press Enter to Start Game";
+        const enterTextFontSize: i32 = 20;
+
+        const gameTitleWidth = rl.measureText(gameTitle, gameTitleFontSize);
+        const enterTextWidth = rl.measureText(enterText, enterTextFontSize);
+
+        rl.drawText(gameTitle, screenWidth / 2 - @divFloor(gameTitleWidth, 2), screenHeight / 2, gameTitleFontSize, rl.Color.red);
+        rl.drawText(enterText, screenWidth / 2 - @divFloor(enterTextWidth, 2), screenHeight / 2 + 50, enterTextFontSize, rl.Color.red);
+
         rl.endDrawing();
         return true;
     }

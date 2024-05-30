@@ -11,6 +11,7 @@ color: rl.Color,
 alloc: *std.mem.Allocator,
 animManager: *AnimationManager,
 levelBounds: rl.Rectangle,
+health: usize = 3,
 
 const shipIdleSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 24);
 const speed = 100.0;
@@ -88,4 +89,8 @@ pub fn render(self: *Self, dt: f32) void {
 
 pub fn deinit(_: *Self) void {
     rl.unloadTexture(texture);
+}
+
+pub fn getHurt(self: *Self) void {
+    self.health -= 1;
 }

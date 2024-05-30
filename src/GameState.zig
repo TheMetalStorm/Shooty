@@ -5,19 +5,21 @@ const rl = @import("raylib");
 const std = @import("std");
 const AnimationManager = @import("AnimationManager.zig");
 const RessourceManager = @import("RessourceManager.zig");
+const RndGen = std.rand.DefaultPrng;
+
 camera: rl.Camera2D,
 player: Player,
 enemies: std.ArrayList(Enemy),
 bullets: std.ArrayList(Bullet),
 animManager: *AnimationManager,
-
 score: i32 = 0,
-
 wasReset: bool = false,
+mainMenu: bool = true,
+isPaused: bool = false,
 const Self = @This();
 const screenWidth = 800;
 const screenHeight = 450;
-
+var rnd = RndGen.init(0);
 var levelArena: std.heap.ArenaAllocator = undefined;
 var levelAlloc: std.mem.Allocator = undefined;
 const bgSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 128, 256);
@@ -25,8 +27,6 @@ const cameraBounds: rl.Rectangle = rl.Rectangle.init(-screenWidth, -screenHeight
 //TODO: make game infinetly playable by addding more/faster/different enemies as the player progresses
 //TODO: maybe items? health packs, ammo, weapons, etc.
 
-//TODO: game over screen when dead -> start at level one
-//TODO: make player vulnerable to enemy, blink when hurt and for a few seconds after being hit, invurnable for a few seconds after being hit
 //TODO: add sound effects, music
 //TODO: ship it
 
@@ -59,10 +59,12 @@ pub fn deinit(_: *Self) void {
 }
 
 pub fn update(self: *Self, dt: f32) !void {
-    if (self.score >= 10) {
-        try self.resetLevel();
-        return;
-    }
+    //TODO: add level progression
+
+    // if (self.score >= 10) {
+    //     try self.resetLevel();
+    //     return;
+    // }
 
     try self.player.update(self, dt);
 
@@ -71,19 +73,52 @@ pub fn update(self: *Self, dt: f32) !void {
             bullet.update(dt);
     }
 
-    if (self.enemies.items.len < 20) {
+    var activeEnemyCount: usize = 0;
+    for (self.enemies.items) |*enemy| {
+        if (enemy.active) {
+            activeEnemyCount += 1;
+        }
+    }
+
+    if (activeEnemyCount < 30) {
 
         //TODO: better logic for enemy spawn position
-        const x: f32 = @floatFromInt(rl.getRandomValue(@intFromFloat(self.player.pos.x - screenWidth), @intFromFloat(self.player.pos.x + screenWidth)));
-        const y: f32 = @floatFromInt(rl.getRandomValue(@intFromFloat(self.player.pos.y - screenHeight), @intFromFloat(self.player.pos.y + screenHeight)));
-        try self.enemies.append(Enemy.init(x, y, rl.Color.green, 1));
+
+        const x: f32 = @floatFromInt(rl.getRandomValue(@intFromFloat(-cameraBounds.width), @intFromFloat(cameraBounds.width)));
+        const y: f32 = @floatFromInt(rl.getRandomValue(@intFromFloat(-cameraBounds.height), @intFromFloat(cameraBounds.height)));
+
+        const some_random_num = rnd.random().intRangeAtMost(i32, 0, 10);
+        switch (some_random_num) {
+            0...5 => {
+                try self.enemies.append(try Enemy.init(&levelAlloc, x, y, 0));
+            },
+            6...9 => {
+                try self.enemies.append(try Enemy.init(&levelAlloc, x, y, 1));
+            },
+            10 => {
+                try self.enemies.append(try Enemy.init(&levelAlloc, x, y, 2));
+            },
+            else => {
+                try self.enemies.append(try Enemy.init(&levelAlloc, x, y, 0));
+            },
+        }
     }
 
-    for (self.enemies.items, 0..) |*enemy, index| {
-        enemy.update(self, dt);
-        enemy.checkCollisions(self, index);
+    for (self.enemies.items) |*enemy| {
+        if (enemy.active) {
+            enemy.update(self, dt);
+        }
     }
 
+    self.updateCamera(dt);
+
+    if (self.player.health == 0) {
+        try self.resetLevel();
+        self.mainMenu = true;
+    }
+}
+
+fn updateCamera(self: *Self, dt: f32) void {
     const lerp = 5;
     self.camera.target.x += (self.player.pos.x - self.camera.target.x) * lerp * dt;
     self.camera.target.y += (self.player.pos.y - self.camera.target.y) * lerp * dt;
@@ -132,6 +167,8 @@ pub fn render(self: *Self, dt: f32) !void {
     self.player.render(dt);
 
     for (self.enemies.items) |*enemy| {
-        enemy.render();
+        if (enemy.active) {
+            enemy.render(dt);
+        }
     }
 }
