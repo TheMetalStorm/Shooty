@@ -93,12 +93,15 @@ pub fn checkCollisions(self: *Self, gs: *GameState) void {
     }
 
     //player collision
-    const wP = @as(f32, @floatFromInt(gs.player.animManager.currentAnimation.spritesheet.spriteWidth));
-    const hP = @as(f32, @floatFromInt(gs.player.animManager.currentAnimation.spritesheet.spriteHeight));
-    const playerRect = rl.Rectangle.init(gs.player.pos.x - wP / 2, gs.player.pos.y - hP / 2, w, h);
+    //TODO: BUG: sometimes the player gets hit multiple times in one frame
+    if (!gs.player.isInvulnerable) {
+        const wP = @as(f32, @floatFromInt(gs.player.animManager.currentAnimation.spritesheet.spriteWidth));
+        const hP = @as(f32, @floatFromInt(gs.player.animManager.currentAnimation.spritesheet.spriteHeight));
+        const playerRect = rl.Rectangle.init(gs.player.pos.x - wP / 2, gs.player.pos.y - hP / 2, w, h);
 
-    if (rl.checkCollisionRecs(enemyRect, playerRect)) {
-        gs.player.getHurt();
+        if (rl.checkCollisionRecs(enemyRect, playerRect)) {
+            gs.player.getHurt();
+        }
     }
 }
 

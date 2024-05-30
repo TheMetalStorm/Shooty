@@ -55,6 +55,7 @@ pub fn main() !void {
 
 fn drawGUI(gs: *GameState) void {
     rl.drawText(rl.textFormat("Score: %02i", .{gs.score}), 20, 20, 20, rl.Color.red);
+    rl.drawText(rl.textFormat("Health: %02i", .{gs.player.health}), 200, 20, 20, rl.Color.red);
     rl.drawText(rl.textFormat("Frame Time: %02f", .{rl.getFrameTime()}), 20, 60, 20, rl.Color.red);
     rl.drawText(rl.textFormat("FPS: %.2f", .{1.0 / rl.getFrameTime()}), 20, 80, 20, rl.Color.red);
 }

@@ -27,7 +27,6 @@ const cameraBounds: rl.Rectangle = rl.Rectangle.init(-screenWidth, -screenHeight
 //TODO: make game infinetly playable by addding more/faster/different enemies as the player progresses
 //TODO: maybe items? health packs, ammo, weapons, etc.
 
-//TODO: player has 3 health, blinks and is invincible for a few seconds after taking damage
 //TODO: add sound effects, music
 //TODO: ship it
 

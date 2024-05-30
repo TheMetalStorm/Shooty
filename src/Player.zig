@@ -12,6 +12,7 @@ alloc: *std.mem.Allocator,
 animManager: *AnimationManager,
 levelBounds: rl.Rectangle,
 health: usize = 3,
+isInvulnerable: bool = false,
 
 const shipIdleSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 24);
 const speed = 100.0;
@@ -22,7 +23,8 @@ var texture: rl.Texture2D = undefined;
 var lookDir: rl.Vector2 = undefined;
 var bulletTimer: f32 = 0;
 var bulletWaitTime: f32 = 0.5;
-
+var invulnerableTimer: f32 = 0;
+var invulnerableTime: f32 = 2;
 pub fn getLookDir(_: *Self) rl.Vector2 {
     return lookDir;
 }
@@ -35,6 +37,15 @@ pub fn init(_alloc: *std.mem.Allocator, _x: f32, _y: f32, _color: rl.Color, _lev
 }
 
 pub fn update(self: *Self, gs: *GameState, dt: f32) !void {
+    std.debug.print("player health: {d}\n", .{self.health});
+    if (self.isInvulnerable) {
+        invulnerableTimer -= dt;
+    }
+    if (invulnerableTimer < 0) {
+        self.isInvulnerable = false;
+        invulnerableTimer = invulnerableTime;
+    }
+
     const dir = rm.vector2Subtract(rl.getScreenToWorld2D(rl.getMousePosition(), gs.camera), rl.Vector2.init(self.pos.x, self.pos.y));
     const dirNorm = rm.vector2Normalize(dir);
     lookDir = dirNorm;
@@ -84,7 +95,13 @@ pub fn render(self: *Self, dt: f32) void {
 
     const viewAngle = @mod(std.math.radiansToDegrees(std.math.atan2(lookDir.y, lookDir.x)) + 360 + 90, 360); // 90 is the offset to make the ship face the mouse
     const sizeMult = 2;
-    self.animManager.playCurrent(rl.Rectangle.init(self.pos.x, self.pos.y, shipIdleSpriteRect.width * sizeMult, shipIdleSpriteRect.height * sizeMult), rl.Vector2.init(shipIdleSpriteRect.width * sizeMult / 2, shipIdleSpriteRect.height * sizeMult / 2), viewAngle, rl.Color.white, dt);
+    if (self.isInvulnerable) {
+        if (@mod(invulnerableTimer, 0.3) < 0.05) {
+            self.animManager.playCurrent(rl.Rectangle.init(self.pos.x, self.pos.y, shipIdleSpriteRect.width * sizeMult, shipIdleSpriteRect.height * sizeMult), rl.Vector2.init(shipIdleSpriteRect.width * sizeMult / 2, shipIdleSpriteRect.height * sizeMult / 2), viewAngle, rl.Color.white, dt);
+        }
+    } else {
+        self.animManager.playCurrent(rl.Rectangle.init(self.pos.x, self.pos.y, shipIdleSpriteRect.width * sizeMult, shipIdleSpriteRect.height * sizeMult), rl.Vector2.init(shipIdleSpriteRect.width * sizeMult / 2, shipIdleSpriteRect.height * sizeMult / 2), viewAngle, rl.Color.white, dt);
+    }
 }
 
 pub fn deinit(_: *Self) void {
@@ -93,4 +110,5 @@ pub fn deinit(_: *Self) void {
 
 pub fn getHurt(self: *Self) void {
     self.health -= 1;
+    self.isInvulnerable = true;
 }
