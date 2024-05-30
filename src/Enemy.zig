@@ -12,11 +12,11 @@ active: bool = true,
 
 pos: rl.Vector2,
 type: usize,
-health: u8,
+health: u16,
 alloc: *std.mem.Allocator,
 animManager: *AnimationManager,
 speed: usize,
-
+wasHitThisFrame: bool = false,
 const enemySpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 16);
 const sizeMult: f32 = 4.0;
 pub const playerLenience: f32 = 2;
@@ -60,6 +60,7 @@ pub fn init(
 }
 
 pub fn update(self: *Self, gs: *GameState, dt: f32) void {
+    self.wasHitThisFrame = false;
     if (self.markedDead) {
         self.active = false;
         return;
@@ -81,20 +82,23 @@ pub fn checkCollisions(self: *Self, gs: *GameState) void {
     const h = enemySpriteRect.height * (@as(f32, @floatFromInt(self.type)) + sizeMult);
     const enemyColRect = rl.Rectangle.init(self.pos.x - w / 2, self.pos.y - h / 2, w, h);
 
+    if (!self.wasHitThisFrame)
     //bullet collision
-    for (gs.bullets.items) |*bullet| {
-        if (!bullet.markedDead and rl.checkCollisionCircleRec(bullet.pos, bullet.radius, enemyColRect)) {
-            self.health -= 1;
-            if (self.health <= 0) {
-                self.markedDead = true;
-                gs.score += 1;
+    {
+        for (gs.bullets.items) |*bullet| {
+            if (!bullet.markedDead and rl.checkCollisionCircleRec(bullet.pos, bullet.radius, enemyColRect)) {
+                self.health -= 1;
+                if (self.health <= 0) {
+                    self.markedDead = true;
+                    gs.score += 1;
+                }
+                bullet.markedDead = true;
+                self.wasHitThisFrame = true;
             }
-            bullet.markedDead = true;
         }
     }
 
     //player collision
-    //TODO: BUG: sometimes the player gets hit multiple times in one frame
     if (!gs.player.isInvulnerable) {
         const wP = @as(f32, @floatFromInt(gs.player.animManager.currentAnimation.spritesheet.spriteWidth)) * (Player.sizeMult - playerLenience);
         const hP = @as(f32, @floatFromInt(gs.player.animManager.currentAnimation.spritesheet.spriteHeight)) * (Player.sizeMult - playerLenience);

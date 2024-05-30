@@ -14,6 +14,7 @@ animManager: *AnimationManager,
 levelBounds: rl.Rectangle,
 health: usize = 3,
 isInvulnerable: bool = false,
+wasHitThisFrame: bool = false,
 
 pub const sizeMult: f32 = 3.0;
 const shipIdleSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 24);
@@ -39,6 +40,8 @@ pub fn init(_alloc: *std.mem.Allocator, _x: f32, _y: f32, _color: rl.Color, _lev
 }
 
 pub fn update(self: *Self, gs: *GameState, dt: f32) !void {
+    self.wasHitThisFrame = false;
+
     self.updateInvulnerability(dt);
     self.updateMovement(dt, gs);
     try self.updateShooting(dt, gs);
@@ -132,6 +135,7 @@ pub fn deinit(_: *Self) void {
 }
 
 pub fn getHurt(self: *Self) void {
+    if (self.wasHitThisFrame) return;
     self.health -= 1;
     self.isInvulnerable = true;
 }
