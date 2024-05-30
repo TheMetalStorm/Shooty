@@ -37,19 +37,31 @@ pub fn init(_alloc: *std.mem.Allocator, _x: f32, _y: f32, _color: rl.Color, _lev
 }
 
 pub fn update(self: *Self, gs: *GameState, dt: f32) !void {
-    std.debug.print("player health: {d}\n", .{self.health});
-    if (self.isInvulnerable) {
-        invulnerableTimer -= dt;
-    }
-    if (invulnerableTimer < 0) {
-        self.isInvulnerable = false;
-        invulnerableTimer = invulnerableTime;
+    self.updateInvulnerability(dt);
+    self.updateMovement(dt, gs);
+    try self.updateShooting(dt, gs);
+}
+
+fn updateShooting(self: *Self, dt: f32, gs: *GameState) !void {
+    if (rl.isMouseButtonDown(rl.MouseButton.mouse_button_left)) {
+        bulletTimer -= dt;
+        if (bulletTimer < 0) {
+            var spawned = try Bullet.init(self.alloc, self.pos.x, self.pos.y, lookDir, bulletSpeed, rl.Color.blue);
+            try spawned.animManager.setCurrent("bullet_normal");
+            try gs.bullets.append(spawned);
+            bulletTimer = bulletWaitTime;
+        }
     }
 
+    if (rl.isMouseButtonReleased(rl.MouseButton.mouse_button_left)) {
+        bulletTimer = -1;
+    }
+}
+
+fn updateMovement(self: *Self, dt: f32, gs: *GameState) void {
     const dir = rm.vector2Subtract(rl.getScreenToWorld2D(rl.getMousePosition(), gs.camera), rl.Vector2.init(self.pos.x, self.pos.y));
     const dirNorm = rm.vector2Normalize(dir);
     lookDir = dirNorm;
-
     if (rl.isKeyDown(rl.KeyboardKey.key_d)) {
         self.pos.x += speed * dt;
     }
@@ -74,19 +86,15 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) !void {
     } else if (self.pos.y > self.levelBounds.height - self.levelBounds.y / 2) {
         self.pos.y = self.levelBounds.height - self.levelBounds.y / 2;
     }
+}
 
-    if (rl.isMouseButtonDown(rl.MouseButton.mouse_button_left)) {
-        bulletTimer -= dt;
-        if (bulletTimer < 0) {
-            var spawned = try Bullet.init(self.alloc, self.pos.x, self.pos.y, lookDir, bulletSpeed, rl.Color.blue);
-            try spawned.animManager.setCurrent("bullet_normal");
-            try gs.bullets.append(spawned);
-            bulletTimer = bulletWaitTime;
-        }
+fn updateInvulnerability(self: *Self, dt: f32) void {
+    if (self.isInvulnerable) {
+        invulnerableTimer -= dt;
     }
-
-    if (rl.isMouseButtonReleased(rl.MouseButton.mouse_button_left)) {
-        bulletTimer = -1;
+    if (invulnerableTimer <= 0) {
+        self.isInvulnerable = false;
+        invulnerableTimer = invulnerableTime;
     }
 }
 
