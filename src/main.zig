@@ -11,8 +11,8 @@ const RessourceManager = @import("RessourceManager.zig");
 const c = @cImport({
     @cInclude("raylib.h");
 });
-const screenWidth = 800;
-const screenHeight = 450;
+const screenWidth = 1600;
+const screenHeight = 900;
 pub fn main() !void {
     rl.initWindow(screenWidth, screenHeight, "Shooty");
     defer rl.closeWindow();
@@ -23,7 +23,7 @@ pub fn main() !void {
 
     try RessourceManager.init("src/assets/");
     try setupRessources();
-    var gs = try GameState.init();
+    var gs = try GameState.init(@as(f32, @floatFromInt(screenWidth)), @as(f32, @floatFromInt(screenHeight)));
 
     while (!rl.windowShouldClose()) {
         if (mainMenu(&gs)) {

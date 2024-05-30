@@ -14,10 +14,11 @@ animManager: *AnimationManager,
 
 markedDead: bool = false,
 active: bool = true,
-lifetime: f32 = 2,
+lifetime: f32 = 4,
 lifetimer: f32 = 0,
 alloc: *std.mem.Allocator,
 
+pub const sizeMult: f32 = 4.0;
 const Self = @This();
 const bulletSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 16);
 
@@ -57,7 +58,6 @@ pub fn update(self: *Self, dt: f32) void {
 
 pub fn render(self: *Self, dt: f32) !void {
     if (self.animManager.animations.count() == 0) return;
-    const sizeMult = 4;
     const angle = @mod(std.math.radiansToDegrees(std.math.atan2(self.dir.y, self.dir.x)) + 360 + 90, 360); // 90 is the offset to make the ship face the mouse
 
     if (self.markedDead == true) {

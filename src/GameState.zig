@@ -16,25 +16,29 @@ score: i32 = 0,
 wasReset: bool = false,
 mainMenu: bool = true,
 isPaused: bool = false,
+screenWidth: f32,
+screenHeight: f32,
 const Self = @This();
-const screenWidth = 800;
-const screenHeight = 450;
+
 var rnd = RndGen.init(0);
 var levelArena: std.heap.ArenaAllocator = undefined;
 var levelAlloc: std.mem.Allocator = undefined;
+var cameraBounds: rl.Rectangle = undefined;
+pub const DEBUG = true;
 const bgSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 128, 256);
-const cameraBounds: rl.Rectangle = rl.Rectangle.init(-screenWidth, -screenHeight, screenWidth * 2, screenHeight * 2);
 //TODO: make game infinetly playable by addding more/faster/different enemies as the player progresses
 //TODO: maybe items? health packs, ammo, weapons, etc.
 
 //TODO: add sound effects, music
 //TODO: ship it
 
-pub fn init() !Self {
+pub fn init(_screenWidth: f32, _screenHeight: f32) !Self {
     levelArena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     levelAlloc = levelArena.allocator();
 
-    const _player = try Player.init(&levelAlloc, 150.0, 150.0, rl.Color.red, cameraBounds);
+    cameraBounds = rl.Rectangle.init(-_screenWidth / 2, -_screenHeight / 2, _screenWidth, _screenHeight);
+
+    const _player = try Player.init(&levelAlloc, _screenWidth / 2, _screenHeight / 2, rl.Color.red, cameraBounds);
 
     var _animManager = try AnimationManager.init(&levelAlloc);
     try _animManager.registerAnimation("bg_1", try RessourceManager.getAnimation("bg_1"));
@@ -44,13 +48,15 @@ pub fn init() !Self {
         .player = _player,
         .camera = rl.Camera2D{
             .target = _player.pos,
-            .offset = rl.Vector2.init(screenWidth / 2, screenHeight / 2),
+            .offset = rl.Vector2.init(_screenWidth / 2, _screenHeight / 2),
             .rotation = 0,
             .zoom = 1,
         },
         .enemies = std.ArrayList(Enemy).init(levelAlloc),
         .bullets = std.ArrayList(Bullet).init(levelAlloc),
         .animManager = _animManager,
+        .screenWidth = _screenWidth,
+        .screenHeight = _screenHeight,
     };
 }
 
@@ -138,7 +144,7 @@ pub fn resetLevel(self: *Self) !void {
     self.wasReset = true;
     self.score = 0;
     levelArena.deinit();
-    self.* = try Self.init();
+    self.* = try Self.init(self.screenWidth, self.screenHeight);
 }
 
 pub fn render(self: *Self, dt: f32) !void {

@@ -3,6 +3,7 @@ const rm = @import("raylib-math");
 const std = @import("std");
 const Bullet = @import("Bullet.zig");
 const GameState = @import("GameState.zig");
+const Enemy = @import("Enemy.zig");
 const AnimationManager = @import("AnimationManager.zig");
 const RessourceManager = @import("RessourceManager.zig");
 
@@ -14,6 +15,7 @@ levelBounds: rl.Rectangle,
 health: usize = 3,
 isInvulnerable: bool = false,
 
+pub const sizeMult: f32 = 3.0;
 const shipIdleSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 24);
 const speed = 100.0;
 const bulletSpeed = 200.0;
@@ -100,15 +102,28 @@ fn updateInvulnerability(self: *Self, dt: f32) void {
 
 pub fn render(self: *Self, dt: f32) void {
     if (self.animManager.animations.count() == 0) return;
-
+    const w = shipIdleSpriteRect.width * sizeMult;
+    const h = shipIdleSpriteRect.height * sizeMult;
     const viewAngle = @mod(std.math.radiansToDegrees(std.math.atan2(lookDir.y, lookDir.x)) + 360 + 90, 360); // 90 is the offset to make the ship face the mouse
-    const sizeMult = 2;
     if (self.isInvulnerable) {
         if (@mod(invulnerableTimer, 0.3) < 0.05) {
-            self.animManager.playCurrent(rl.Rectangle.init(self.pos.x, self.pos.y, shipIdleSpriteRect.width * sizeMult, shipIdleSpriteRect.height * sizeMult), rl.Vector2.init(shipIdleSpriteRect.width * sizeMult / 2, shipIdleSpriteRect.height * sizeMult / 2), viewAngle, rl.Color.white, dt);
+            self.animManager.playCurrent(rl.Rectangle.init(self.pos.x, self.pos.y, w, h), rl.Vector2.init(w / 2, h / 2), viewAngle, rl.Color.white, dt);
         }
     } else {
-        self.animManager.playCurrent(rl.Rectangle.init(self.pos.x, self.pos.y, shipIdleSpriteRect.width * sizeMult, shipIdleSpriteRect.height * sizeMult), rl.Vector2.init(shipIdleSpriteRect.width * sizeMult / 2, shipIdleSpriteRect.height * sizeMult / 2), viewAngle, rl.Color.white, dt);
+        self.animManager.playCurrent(rl.Rectangle.init(self.pos.x, self.pos.y, w, h), rl.Vector2.init(w / 2, h / 2), viewAngle, rl.Color.white, dt);
+    }
+
+    const wWithEnemy = shipIdleSpriteRect.width * (sizeMult - Enemy.playerLenience);
+    const hWithEnemy = shipIdleSpriteRect.height * (sizeMult - Enemy.playerLenience);
+
+    if (GameState.DEBUG) {
+        //normal HB
+        const playerCol = rl.Rectangle.init(self.pos.x - w / 2, self.pos.y - h / 2, w, h);
+        rl.drawRectangleLinesEx(playerCol, 4, rl.Color.white);
+
+        //HB with enemy
+        const playerEnemyCol = rl.Rectangle.init(self.pos.x - wWithEnemy / 2, self.pos.y - hWithEnemy / 2, wWithEnemy, hWithEnemy);
+        rl.drawRectangleLinesEx(playerEnemyCol, 4, rl.Color.red);
     }
 }
 

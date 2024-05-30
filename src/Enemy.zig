@@ -18,7 +18,8 @@ animManager: *AnimationManager,
 speed: usize,
 
 const enemySpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 16);
-
+const sizeMult: f32 = 4.0;
+pub const playerLenience: f32 = 2;
 const Self = @This();
 
 pub fn init(
@@ -76,13 +77,13 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) void {
 }
 
 pub fn checkCollisions(self: *Self, gs: *GameState) void {
-    const w = @as(f32, @floatFromInt(self.animManager.currentAnimation.spritesheet.spriteWidth));
-    const h = @as(f32, @floatFromInt(self.animManager.currentAnimation.spritesheet.spriteHeight));
-    const enemyRect = rl.Rectangle.init(self.pos.x - w / 2, self.pos.y - h / 2, w, h);
+    const w = enemySpriteRect.width * (@as(f32, @floatFromInt(self.type)) + sizeMult);
+    const h = enemySpriteRect.height * (@as(f32, @floatFromInt(self.type)) + sizeMult);
+    const enemyColRect = rl.Rectangle.init(self.pos.x - w / 2, self.pos.y - h / 2, w, h);
 
     //bullet collision
     for (gs.bullets.items) |*bullet| {
-        if (!bullet.markedDead and rl.checkCollisionCircleRec(bullet.pos, bullet.radius, enemyRect)) {
+        if (!bullet.markedDead and rl.checkCollisionCircleRec(bullet.pos, bullet.radius, enemyColRect)) {
             self.health -= 1;
             if (self.health <= 0) {
                 self.markedDead = true;
@@ -95,17 +96,27 @@ pub fn checkCollisions(self: *Self, gs: *GameState) void {
     //player collision
     //TODO: BUG: sometimes the player gets hit multiple times in one frame
     if (!gs.player.isInvulnerable) {
-        const wP = @as(f32, @floatFromInt(gs.player.animManager.currentAnimation.spritesheet.spriteWidth));
-        const hP = @as(f32, @floatFromInt(gs.player.animManager.currentAnimation.spritesheet.spriteHeight));
-        const playerRect = rl.Rectangle.init(gs.player.pos.x - wP / 2, gs.player.pos.y - hP / 2, w, h);
+        const wP = @as(f32, @floatFromInt(gs.player.animManager.currentAnimation.spritesheet.spriteWidth)) * (Player.sizeMult - playerLenience);
+        const hP = @as(f32, @floatFromInt(gs.player.animManager.currentAnimation.spritesheet.spriteHeight)) * (Player.sizeMult - playerLenience);
+        const playerRect = rl.Rectangle.init(gs.player.pos.x - wP / 2, gs.player.pos.y - hP / 2, wP, hP);
 
-        if (rl.checkCollisionRecs(enemyRect, playerRect)) {
+        if (rl.checkCollisionRecs(enemyColRect, playerRect)) {
             gs.player.getHurt();
         }
     }
 }
 
 pub fn render(self: *Self, dt: f32) void {
-    const sizeMult: f32 = @as(f32, @floatFromInt(self.type + 2));
-    self.animManager.playCurrent(rl.Rectangle.init(self.pos.x, self.pos.y, enemySpriteRect.width * sizeMult, enemySpriteRect.height * sizeMult), rl.Vector2.init(enemySpriteRect.width * sizeMult / 2, enemySpriteRect.height * sizeMult / 2), 0, rl.Color.white, dt);
+    if (self.animManager.animations.count() == 0) return;
+
+    const size: f32 = @as(f32, @floatFromInt(self.type)) + sizeMult;
+    const w = enemySpriteRect.width * size;
+    const h = enemySpriteRect.height * size;
+
+    self.animManager.playCurrent(rl.Rectangle.init(self.pos.x, self.pos.y, w, h), rl.Vector2.init(w / 2, h / 2), 0, rl.Color.white, dt);
+
+    if (GameState.DEBUG) {
+        const enemyForPlayerColRect = rl.Rectangle.init(self.pos.x - w / 2, self.pos.y - h / 2, w, h);
+        rl.drawRectangleLinesEx(enemyForPlayerColRect, 4, rl.Color.white);
+    }
 }
