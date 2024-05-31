@@ -66,6 +66,11 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) void {
         return;
     }
 
+    self.moveTowardsPlayer(gs, dt);
+    self.checkCollisions(gs);
+}
+
+fn moveTowardsPlayer(self: *Self, gs: *GameState, dt: f32) void {
     const moveTowards = gs.player.pos;
     const direction = rm.vector2Subtract(moveTowards, rl.Vector2{ .x = self.pos.x, .y = self.pos.y });
     const distance = rm.vector2Length(direction);
@@ -74,10 +79,9 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) void {
         self.pos.x += normalizedDirection.x * dt * @as(f32, @floatFromInt(self.speed));
         self.pos.y += normalizedDirection.y * dt * @as(f32, @floatFromInt(self.speed));
     }
-    self.checkCollisions(gs);
 }
 
-pub fn checkCollisions(self: *Self, gs: *GameState) void {
+fn checkCollisions(self: *Self, gs: *GameState) void {
     const w = enemySpriteRect.width * (@as(f32, @floatFromInt(self.type)) + sizeMult);
     const h = enemySpriteRect.height * (@as(f32, @floatFromInt(self.type)) + sizeMult);
     const enemyColRect = rl.Rectangle.init(self.pos.x - w / 2, self.pos.y - h / 2, w, h);
