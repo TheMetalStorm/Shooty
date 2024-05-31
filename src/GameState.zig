@@ -5,12 +5,14 @@ const rl = @import("raylib");
 const std = @import("std");
 const AnimationManager = @import("AnimationManager.zig");
 const RessourceManager = @import("RessourceManager.zig");
+const Item = @import("Item.zig");
 const RndGen = std.rand.DefaultPrng;
 
 camera: rl.Camera2D,
 player: Player,
 enemies: std.ArrayList(Enemy),
 bullets: std.ArrayList(Bullet),
+items: std.ArrayList(Item),
 animManager: *AnimationManager,
 score: i32 = 0,
 wasReset: bool = false,
@@ -18,12 +20,13 @@ mainMenu: bool = true,
 isPaused: bool = false,
 screenWidth: f32,
 screenHeight: f32,
+cameraBounds: rl.Rectangle = undefined,
 const Self = @This();
 
 var rnd = RndGen.init(0);
 var levelArena: std.heap.ArenaAllocator = undefined;
 var levelAlloc: std.mem.Allocator = undefined;
-var cameraBounds: rl.Rectangle = undefined;
+
 pub const DEBUG = true;
 const bgSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 128, 256);
 //TODO: make game infinetly playable by addding more/faster/different enemies as the player progresses
@@ -36,13 +39,18 @@ pub fn init(_screenWidth: f32, _screenHeight: f32) !Self {
     levelArena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     levelAlloc = levelArena.allocator();
 
-    cameraBounds = rl.Rectangle.init(-_screenWidth / 2, -_screenHeight / 2, _screenWidth, _screenHeight);
+    const _cameraBounds = rl.Rectangle.init(-_screenWidth / 2, -_screenHeight / 2, _screenWidth, _screenHeight);
 
-    const _player = try Player.init(&levelAlloc, _screenWidth / 2, _screenHeight / 2, rl.Color.red, cameraBounds);
+    const _player = try Player.init(&levelAlloc, _screenWidth / 2, _screenHeight / 2, rl.Color.red, _cameraBounds);
 
     var _animManager = try AnimationManager.init(&levelAlloc);
     try _animManager.registerAnimation("bg_1", try RessourceManager.getAnimation("bg_1"));
     try _animManager.setCurrent("bg_1");
+
+    const _testItem = try Item.init(&levelAlloc, Item.ItemType.BOMB, rl.Vector2.init(_screenWidth / 2 + 100, _screenHeight / 2 + 100));
+
+    var _items = std.ArrayList(Item).init(levelAlloc);
+    try _items.append(_testItem);
 
     return Self{
         .player = _player,
@@ -54,9 +62,11 @@ pub fn init(_screenWidth: f32, _screenHeight: f32) !Self {
         },
         .enemies = std.ArrayList(Enemy).init(levelAlloc),
         .bullets = std.ArrayList(Bullet).init(levelAlloc),
+        .items = _items,
         .animManager = _animManager,
         .screenWidth = _screenWidth,
         .screenHeight = _screenHeight,
+        .cameraBounds = _cameraBounds,
     };
 }
 
@@ -79,6 +89,11 @@ pub fn update(self: *Self, dt: f32) !void {
             bullet.update(dt);
     }
 
+    for (self.items.items) |*item| {
+        if (item.active)
+            try item.update(self);
+    }
+
     var activeEnemyCount: usize = 0;
     for (self.enemies.items) |*enemy| {
         if (enemy.active) {
@@ -90,8 +105,8 @@ pub fn update(self: *Self, dt: f32) !void {
 
         //TODO: better logic for enemy spawn position
 
-        const x: f32 = @floatFromInt(rl.getRandomValue(@intFromFloat(-cameraBounds.width), @intFromFloat(cameraBounds.width)));
-        const y: f32 = @floatFromInt(rl.getRandomValue(@intFromFloat(-cameraBounds.height), @intFromFloat(cameraBounds.height)));
+        const x: f32 = @floatFromInt(rl.getRandomValue(@intFromFloat(-self.cameraBounds.width), @intFromFloat(self.cameraBounds.width)));
+        const y: f32 = @floatFromInt(rl.getRandomValue(@intFromFloat(-self.cameraBounds.height), @intFromFloat(self.cameraBounds.height)));
 
         const some_random_num = rnd.random().intRangeAtMost(i32, 0, 10);
         switch (some_random_num) {
@@ -128,15 +143,15 @@ fn updateCamera(self: *Self, dt: f32) void {
     const lerp = 5;
     self.camera.target.x += (self.player.pos.x - self.camera.target.x) * lerp * dt;
     self.camera.target.y += (self.player.pos.y - self.camera.target.y) * lerp * dt;
-    if (self.camera.target.x < cameraBounds.x) {
-        self.camera.target.x = cameraBounds.x;
-    } else if (self.camera.target.x > cameraBounds.width) {
-        self.camera.target.x = cameraBounds.width;
+    if (self.camera.target.x < self.cameraBounds.x) {
+        self.camera.target.x = self.cameraBounds.x;
+    } else if (self.camera.target.x > self.cameraBounds.width) {
+        self.camera.target.x = self.cameraBounds.width;
     }
-    if (self.camera.target.y < cameraBounds.y) {
-        self.camera.target.y = cameraBounds.y;
-    } else if (self.camera.target.y > cameraBounds.height) {
-        self.camera.target.y = cameraBounds.height;
+    if (self.camera.target.y < self.cameraBounds.y) {
+        self.camera.target.y = self.cameraBounds.y;
+    } else if (self.camera.target.y > self.cameraBounds.height) {
+        self.camera.target.y = self.cameraBounds.height;
     }
 }
 
@@ -163,6 +178,11 @@ pub fn render(self: *Self, dt: f32) !void {
             rl.drawTexturePro(self.animManager.currentAnimation.spritesheet.spritesheet.*, bgSpriteRect, rl.Rectangle.init(@as(f32, @floatFromInt(w)) * bgSpriteRect.width * bgSize, -@as(f32, @floatFromInt(h)) * bgSpriteRect.height * bgSize, bgSpriteRect.width * bgSize, bgSpriteRect.height * bgSize), rl.Vector2.init(0, 0), 0, rl.Color.white);
             rl.drawTexturePro(self.animManager.currentAnimation.spritesheet.spritesheet.*, bgSpriteRect, rl.Rectangle.init(-@as(f32, @floatFromInt(w)) * bgSpriteRect.width * bgSize, @as(f32, @floatFromInt(h)) * bgSpriteRect.height * bgSize, bgSpriteRect.width * bgSize, bgSpriteRect.height * bgSize), rl.Vector2.init(0, 0), 0, rl.Color.white);
         }
+    }
+
+    for (self.items.items) |*item| {
+        if (item.active)
+            try item.render(dt);
     }
 
     for (self.bullets.items) |*bullet| {

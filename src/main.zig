@@ -65,11 +65,13 @@ fn setupRessources() !void {
     try RessourceManager.loadSpritesheet("spritesheets/ship.png", 5, 2, 16, 24);
     try RessourceManager.loadSpritesheet("spritesheets/laser-bolts.png", 2, 2, 16, 16);
     try RessourceManager.loadSpritesheet("spritesheets/explosion.png", 5, 1, 16, 16);
-    try RessourceManager.loadSpritesheet("SpaceShooterAssets/SpaceShooterAssetPack_Characters.png", 5, 10, 8, 8);
-    try RessourceManager.loadSpritesheet("SpaceShooterAssets/SpaceShooterAssetPack_BackGrounds.png", 3, 2, 128, 256);
     try RessourceManager.loadSpritesheet("spritesheets/enemy-small.png", 2, 1, 16, 16);
     try RessourceManager.loadSpritesheet("spritesheets/enemy-medium.png", 2, 1, 32, 16);
     try RessourceManager.loadSpritesheet("spritesheets/enemy-big.png", 2, 1, 32, 32);
+    try RessourceManager.loadSpritesheet("spritesheets/power-up.png", 2, 2, 16, 16);
+
+    try RessourceManager.loadSpritesheet("SpaceShooterAssets/SpaceShooterAssetPack_Characters.png", 5, 10, 8, 8);
+    try RessourceManager.loadSpritesheet("SpaceShooterAssets/SpaceShooterAssetPack_BackGrounds.png", 3, 2, 128, 256);
 
     //INFO: Animations here
     try RessourceManager.loadAnimation("bg_1", "SpaceShooterAssets/SpaceShooterAssetPack_BackGrounds.png", 10, &[_]usize{1}, true);
@@ -79,7 +81,9 @@ fn setupRessources() !void {
     try RessourceManager.loadAnimation("enemy_small", "spritesheets/enemy-small.png", 30, &[_]usize{ 0, 1 }, true);
     try RessourceManager.loadAnimation("enemy_medium", "spritesheets/enemy-medium.png", 30, &[_]usize{ 0, 1 }, true);
     try RessourceManager.loadAnimation("enemy_big", "spritesheets/enemy-big.png", 30, &[_]usize{ 0, 1 }, true);
+    try RessourceManager.loadAnimation("item_bomb", "spritesheets/power-up.png", 30, &[_]usize{ 0, 1 }, true);
 
+    //INFO: Sound here
     try RessourceManager.loadSound("bullet_fire", "music/bullet_fire.wav");
 }
 
