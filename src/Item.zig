@@ -15,7 +15,7 @@ pos: rl.Vector2 = undefined,
 animManager: *AnimationManager = undefined,
 markedCollected: bool = false,
 timer: f32 = 0,
-//TODO: figure out actual size
+var soundEffect: *rl.Sound = undefined;
 const bombRadius: f32 = 400;
 const bombRadiusLifetime: f32 = 2;
 const itemSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 16);
@@ -28,6 +28,7 @@ pub fn init(_alloc: *std.mem.Allocator, _itemType: ItemType, _pos: rl.Vector2) !
     //depending on type assign animation
     switch (_itemType) {
         ItemType.BOMB => {
+            soundEffect = try RessourceManager.getSound("bomb");
             try _animManager.registerAnimation("item_bomb", try RessourceManager.getAnimation("item_bomb"));
             try _animManager.setCurrent("item_bomb");
         },
@@ -40,6 +41,7 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) !bool {
     if (self.markedCollected) {
         switch (self.itemType) {
             ItemType.BOMB => {
+                if (self.timer == 0) rl.playSound(soundEffect.*);
                 self.timer += dt;
                 if (self.timer > bombRadiusLifetime) {
                     return false;
@@ -62,6 +64,9 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) !bool {
     const itemColRect = rl.Rectangle.init(self.pos.x - w / 2, self.pos.y - h / 2, w, h);
 
     if (rl.checkCollisionRecs(itemColRect, playerRect)) {
+        switch (self.itemType) {
+            ItemType.BOMB => {},
+        }
         self.markedCollected = true;
     }
     return true;
@@ -71,7 +76,7 @@ pub fn render(self: *Self, dt: f32) !void {
     if (self.markedCollected) {
         switch (self.itemType) {
             ItemType.BOMB => {
-                rl.drawCircleLinesV(self.pos, bombRadius * self.timer / bombRadiusLifetime, rl.Color.red);
+                rl.drawCircleLinesV(self.pos, bombRadius * self.timer / bombRadiusLifetime, rl.Color.sky_blue);
             },
         }
         return;

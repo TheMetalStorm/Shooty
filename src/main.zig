@@ -85,6 +85,7 @@ fn setupRessources() !void {
 
     //INFO: Sound here
     try RessourceManager.loadSound("bullet_fire", "music/bullet_fire.wav");
+    try RessourceManager.loadSound("bomb", "music/bomb.wav");
 }
 
 fn gamePause(gs: *GameState) bool {
