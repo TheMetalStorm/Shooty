@@ -76,7 +76,7 @@ pub fn render(self: *Self, dt: f32) !void {
     if (self.markedCollected) {
         switch (self.itemType) {
             ItemType.BOMB => {
-                rl.drawCircleLinesV(self.pos, bombRadius * self.timer / bombRadiusLifetime, rl.Color.sky_blue);
+                rl.drawCircleGradient(@as(i32, @intFromFloat(self.pos.x)), @as(i32, @intFromFloat(self.pos.y)), rm.clamp(bombRadius * self.timer / bombRadiusLifetime - 20, 0, bombRadius), rl.Color.red, rl.Color.orange);
             },
         }
         return;
