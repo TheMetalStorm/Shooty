@@ -82,10 +82,12 @@ fn setupRessources() !void {
     try RessourceManager.loadAnimation("enemy_medium", "spritesheets/enemy-medium.png", 30, &[_]usize{ 0, 1 }, true);
     try RessourceManager.loadAnimation("enemy_big", "spritesheets/enemy-big.png", 30, &[_]usize{ 0, 1 }, true);
     try RessourceManager.loadAnimation("item_bomb", "spritesheets/power-up.png", 30, &[_]usize{ 0, 1 }, true);
+    try RessourceManager.loadAnimation("item_health", "spritesheets/power-up.png", 30, &[_]usize{ 2, 3 }, true);
 
     //INFO: Sound here
     try RessourceManager.loadSound("bullet_fire", "music/bullet_fire.wav");
     try RessourceManager.loadSound("bomb", "music/bomb.wav");
+    try RessourceManager.loadSound("health", "music/health.wav");
 }
 
 fn gamePause(gs: *GameState) bool {

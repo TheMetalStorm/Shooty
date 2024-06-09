@@ -8,6 +8,7 @@ const AnimationManager = @import("AnimationManager.zig");
 
 pub const ItemType = enum {
     BOMB,
+    HEALTH,
 };
 
 itemType: ItemType = undefined,
@@ -18,6 +19,8 @@ timer: f32 = 0,
 var soundEffect: *rl.Sound = undefined;
 const bombRadius: f32 = 400;
 const bombRadiusLifetime: f32 = 2;
+const healthRadius: f32 = 100;
+const healthLifetime: f32 = 0.5;
 const itemSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 16);
 const sizeMult: f32 = 2.0;
 const Self = @This();
@@ -31,6 +34,11 @@ pub fn init(_alloc: *std.mem.Allocator, _itemType: ItemType, _pos: rl.Vector2) !
             soundEffect = try RessourceManager.getSound("bomb");
             try _animManager.registerAnimation("item_bomb", try RessourceManager.getAnimation("item_bomb"));
             try _animManager.setCurrent("item_bomb");
+        },
+        ItemType.HEALTH => {
+            soundEffect = try RessourceManager.getSound("health");
+            try _animManager.registerAnimation("item_health", try RessourceManager.getAnimation("item_health"));
+            try _animManager.setCurrent("item_health");
         },
     }
 
@@ -52,7 +60,16 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) !bool {
                     }
                 }
             },
+            ItemType.HEALTH => {
+                if (self.timer == 0)
+                    rl.playSound(soundEffect.*);
+                self.timer += dt;
+                if (self.timer > healthLifetime) {
+                    return false;
+                }
+            },
         }
+        return true;
     }
 
     const wP = @as(f32, @floatFromInt(gs.player.animManager.currentAnimation.spritesheet.spriteWidth)) * (Player.sizeMult);
@@ -66,17 +83,25 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) !bool {
     if (rl.checkCollisionRecs(itemColRect, playerRect)) {
         switch (self.itemType) {
             ItemType.BOMB => {},
+            ItemType.HEALTH => {
+                gs.player.health += 1;
+            },
         }
         self.markedCollected = true;
     }
     return true;
 }
 
-pub fn render(self: *Self, dt: f32) !void {
+pub fn render(self: *Self, gs: *GameState, dt: f32) !void {
     if (self.markedCollected) {
         switch (self.itemType) {
             ItemType.BOMB => {
                 rl.drawCircleGradient(@as(i32, @intFromFloat(self.pos.x)), @as(i32, @intFromFloat(self.pos.y)), rm.clamp(bombRadius * self.timer / bombRadiusLifetime - 20, 0, bombRadius), rl.Color.red, rl.Color.orange);
+            },
+            ItemType.HEALTH => {
+                rl.drawCircleLinesV(gs.player.pos, healthRadius - (healthRadius * self.timer / healthLifetime), rl.Color.sky_blue);
+                rl.drawCircleLinesV(gs.player.pos, rm.clamp(healthRadius - 20 - (healthRadius * self.timer / healthLifetime), 0, healthRadius), rl.Color.sky_blue);
+                rl.drawCircleLinesV(gs.player.pos, rm.clamp(healthRadius + 20 - (healthRadius * self.timer / healthLifetime), 0, healthRadius), rl.Color.sky_blue);
             },
         }
         return;
