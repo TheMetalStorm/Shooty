@@ -8,7 +8,6 @@ const AnimationManager = @import("AnimationManager.zig");
 const RessourceManager = @import("RessourceManager.zig");
 
 markedDead: bool = false,
-active: bool = true,
 
 pos: rl.Vector2,
 type: usize,

@@ -82,18 +82,18 @@ pub fn deinit(self: *Self) void {
     self.bullets.deinit();
 
     //items
-    // for (self.enemies.items) |enemy| {
-    //     enemy.deinit();
-    // }
-    // self.enemies.deinit();
+    for (self.items.items) |*item| {
+        item.deinit();
+    }
+    self.items.deinit();
 }
 
 pub fn update(self: *Self, dt: f32) !void {
     //TODO: add level progression
     try self.player.update(self, dt);
     try self.updateBullets(dt);
-    try self.updateItems();
     try self.updateEnemies(dt);
+    try self.updateItems(dt);
     self.cameraUpdate(dt);
 
     if (self.player.health == 0) {
@@ -102,10 +102,22 @@ pub fn update(self: *Self, dt: f32) !void {
     }
 }
 
-fn updateItems(self: *Self) !void {
-    for (self.items.items) |*item| {
-        if (item.active)
-            try item.update(self);
+fn updateItems(self: *Self, dt: f32) !void {
+    var itemsToRemove = std.ArrayList(usize).init(gpa);
+    defer itemsToRemove.deinit();
+
+    for (self.items.items, 0..) |*item, index| {
+        const active = try item.update(self, dt);
+        if (!active) {
+            try itemsToRemove.append(index);
+        }
+    }
+
+    std.mem.reverse(usize, itemsToRemove.items);
+
+    for (itemsToRemove.items) |index| {
+        var removed = self.items.orderedRemove(index);
+        removed.deinit();
     }
 }
 
@@ -119,8 +131,9 @@ fn updateBullets(self: *Self, dt: f32) !void {
         }
     }
 
+    std.mem.reverse(usize, bulletsToRemove.items);
     for (bulletsToRemove.items) |index| {
-        var removed = self.bullets.swapRemove(index);
+        var removed = self.bullets.orderedRemove(index);
         removed.deinit();
     }
 }
@@ -157,8 +170,10 @@ fn updateEnemies(self: *Self, dt: f32) !void {
             try enemiesToRemove.append(index);
         }
     }
+
+    std.mem.reverse(usize, enemiesToRemove.items);
     for (enemiesToRemove.items) |index| {
-        var removed = self.enemies.swapRemove(index);
+        var removed = self.enemies.orderedRemove(index);
         removed.deinit();
     }
 }
@@ -197,8 +212,7 @@ pub fn render(self: *Self, dt: f32) !void {
     self.renderBG();
 
     for (self.items.items) |*item| {
-        if (item.active)
-            try item.render(dt);
+        try item.render(dt);
     }
 
     for (self.bullets.items) |*bullet| {

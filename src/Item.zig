@@ -1,5 +1,6 @@
 const std = @import("std");
 const rl = @import("raylib");
+const rm = @import("raylib-math");
 const GameState = @import("GameState.zig");
 const Player = @import("Player.zig");
 const RessourceManager = @import("RessourceManager.zig");
@@ -12,8 +13,11 @@ pub const ItemType = enum {
 itemType: ItemType = undefined,
 pos: rl.Vector2 = undefined,
 animManager: *AnimationManager = undefined,
-active: bool = true,
+markedCollected: bool = false,
+bombRadiusLifetimer: f32 = 0,
 //TODO: figure out actual size
+const bombRadius: f32 = 300;
+const bombRadiusLifetime: f32 = 2;
 const itemSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 16);
 const sizeMult: f32 = 2.0;
 const Self = @This();
@@ -32,7 +36,23 @@ pub fn init(_alloc: *std.mem.Allocator, _itemType: ItemType, _pos: rl.Vector2) !
     return Self{ .itemType = _itemType, .pos = _pos, .animManager = _animManager };
 }
 
-pub fn update(self: *Self, gs: *GameState) !void {
+pub fn update(self: *Self, gs: *GameState, dt: f32) !bool {
+    if (self.markedCollected) {
+        switch (self.itemType) {
+            ItemType.BOMB => {
+                self.bombRadiusLifetimer += dt;
+                if (self.bombRadiusLifetimer > bombRadiusLifetime) {
+                    return false;
+                }
+                for (gs.enemies.items) |*enemy| {
+                    if (rm.vector2Distance(self.pos, enemy.pos) < bombRadius) {
+                        enemy.markedDead = true;
+                    }
+                }
+            },
+        }
+    }
+
     const wP = @as(f32, @floatFromInt(gs.player.animManager.currentAnimation.spritesheet.spriteWidth)) * (Player.sizeMult);
     const hP = @as(f32, @floatFromInt(gs.player.animManager.currentAnimation.spritesheet.spriteHeight)) * (Player.sizeMult);
     const playerRect = rl.Rectangle.init(gs.player.pos.x - wP / 2, gs.player.pos.y - hP / 2, wP, hP);
@@ -42,15 +62,20 @@ pub fn update(self: *Self, gs: *GameState) !void {
     const itemColRect = rl.Rectangle.init(self.pos.x - w / 2, self.pos.y - h / 2, w, h);
 
     if (rl.checkCollisionRecs(itemColRect, playerRect)) {
-        switch (self.itemType) {
-            ItemType.BOMB => {
-                self.active = false;
-            },
-        }
+        self.markedCollected = true;
     }
+    return true;
 }
 
 pub fn render(self: *Self, dt: f32) !void {
+    if (self.markedCollected) {
+        switch (self.itemType) {
+            ItemType.BOMB => {
+                rl.drawCircleLines(@as(i32, @intFromFloat(self.pos.x)), @as(i32, @intFromFloat(self.pos.y)), bombRadius, rl.Color.red);
+            },
+        }
+        return;
+    }
     if (self.animManager.animations.count() == 0) return;
     const w = itemSpriteRect.width * sizeMult;
     const h = itemSpriteRect.height * sizeMult;
@@ -61,4 +86,8 @@ pub fn render(self: *Self, dt: f32) !void {
     }
 
     self.animManager.playCurrent(rl.Rectangle.init(self.pos.x, self.pos.y, w, h), rl.Vector2.init(w / 2, h / 2), 0, rl.Color.white, dt);
+}
+
+pub fn deinit(self: *Self) void {
+    self.animManager.deinit();
 }
