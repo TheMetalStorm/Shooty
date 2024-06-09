@@ -61,6 +61,7 @@ pub fn init(
 pub fn update(self: *Self, gs: *GameState, dt: f32) bool {
     self.wasHitThisFrame = false;
     if (self.markedDead) {
+        gs.score += 1;
         return false;
     }
 
@@ -85,15 +86,12 @@ fn checkCollisions(self: *Self, gs: *GameState) void {
     const h = enemySpriteRect.height * (@as(f32, @floatFromInt(self.type)) + sizeMult);
     const enemyColRect = rl.Rectangle.init(self.pos.x - w / 2, self.pos.y - h / 2, w, h);
 
-    if (!self.wasHitThisFrame)
-    //bullet collision
-    {
+    if (!self.wasHitThisFrame) {
         for (gs.bullets.items) |*bullet| {
             if (!bullet.markedDead and rl.checkCollisionCircleRec(bullet.pos, bullet.radius, enemyColRect)) {
                 self.health -= 1;
                 if (self.health <= 0) {
                     self.markedDead = true;
-                    gs.score += 1;
                 }
                 bullet.markedDead = true;
                 self.wasHitThisFrame = true;

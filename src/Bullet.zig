@@ -14,7 +14,7 @@ animManager: *AnimationManager,
 
 markedDead: bool = false,
 lifetime: f32 = 4,
-lifetimer: f32 = 0,
+timer: f32 = 0,
 alloc: *std.mem.Allocator,
 
 pub const sizeMult: f32 = 4.0;
@@ -40,8 +40,8 @@ pub fn init(
 }
 
 pub fn update(self: *Self, dt: f32) !bool {
-    self.lifetimer += dt;
-    if (self.lifetimer > self.lifetime) {
+    self.timer += dt;
+    if (self.timer > self.lifetime) {
         self.markedDead = true;
     }
 

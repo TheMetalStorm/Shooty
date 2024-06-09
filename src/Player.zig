@@ -40,7 +40,6 @@ pub fn init(_alloc: *std.mem.Allocator, _x: f32, _y: f32, _color: rl.Color, _lev
 }
 
 pub fn update(self: *Self, gs: *GameState, dt: f32) !void {
-    std.debug.print("Player pos: {d} {d}\n", .{ self.pos.x, self.pos.y });
     self.wasHitThisFrame = false;
 
     self.updateInvulnerability(dt);

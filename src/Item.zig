@@ -14,9 +14,9 @@ itemType: ItemType = undefined,
 pos: rl.Vector2 = undefined,
 animManager: *AnimationManager = undefined,
 markedCollected: bool = false,
-bombRadiusLifetimer: f32 = 0,
+timer: f32 = 0,
 //TODO: figure out actual size
-const bombRadius: f32 = 300;
+const bombRadius: f32 = 400;
 const bombRadiusLifetime: f32 = 2;
 const itemSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 16);
 const sizeMult: f32 = 2.0;
@@ -40,12 +40,12 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) !bool {
     if (self.markedCollected) {
         switch (self.itemType) {
             ItemType.BOMB => {
-                self.bombRadiusLifetimer += dt;
-                if (self.bombRadiusLifetimer > bombRadiusLifetime) {
+                self.timer += dt;
+                if (self.timer > bombRadiusLifetime) {
                     return false;
                 }
                 for (gs.enemies.items) |*enemy| {
-                    if (rm.vector2Distance(self.pos, enemy.pos) < bombRadius) {
+                    if (rm.vector2Distance(self.pos, enemy.pos) < bombRadius * self.timer / bombRadiusLifetime) {
                         enemy.markedDead = true;
                     }
                 }
@@ -71,7 +71,7 @@ pub fn render(self: *Self, dt: f32) !void {
     if (self.markedCollected) {
         switch (self.itemType) {
             ItemType.BOMB => {
-                rl.drawCircleLines(@as(i32, @intFromFloat(self.pos.x)), @as(i32, @intFromFloat(self.pos.y)), bombRadius, rl.Color.red);
+                rl.drawCircleLinesV(self.pos, bombRadius * self.timer / bombRadiusLifetime, rl.Color.red);
             },
         }
         return;

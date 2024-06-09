@@ -27,7 +27,7 @@ var rnd = RndGen.init(0);
 var general_purpose_allocator = std.heap.GeneralPurposeAllocator(.{}){};
 var gpa: std.mem.Allocator = undefined;
 
-pub const DEBUG = true;
+pub const DEBUG = false;
 const bgSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 128, 256);
 //TODO: make game infinetly playable by addding more/faster/different enemies as the player progresses
 //TODO: maybe items? health packs, ammo, weapons, etc.
@@ -81,7 +81,6 @@ pub fn deinit(self: *Self) void {
     }
     self.bullets.deinit();
 
-    //items
     for (self.items.items) |*item| {
         item.deinit();
     }
