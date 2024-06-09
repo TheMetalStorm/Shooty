@@ -24,8 +24,8 @@ cameraBounds: rl.Rectangle = undefined,
 const Self = @This();
 
 var rnd = RndGen.init(0);
-var levelArena: std.heap.ArenaAllocator = undefined;
-var levelAlloc: std.mem.Allocator = undefined;
+var general_purpose_allocator = std.heap.GeneralPurposeAllocator(.{}){};
+var gpa: std.mem.Allocator = undefined;
 
 pub const DEBUG = true;
 const bgSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 128, 256);
@@ -36,20 +36,18 @@ const bgSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 128, 256);
 //TODO: ship it
 
 pub fn init(_screenWidth: f32, _screenHeight: f32) !Self {
-    levelArena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    levelAlloc = levelArena.allocator();
+    gpa = general_purpose_allocator.allocator();
 
     const _cameraBounds = rl.Rectangle.init(-_screenWidth / 2, -_screenHeight / 2, _screenWidth, _screenHeight);
+    const _player = try Player.init(&gpa, _screenWidth / 2, _screenHeight / 2, rl.Color.red, _cameraBounds);
 
-    const _player = try Player.init(&levelAlloc, _screenWidth / 2, _screenHeight / 2, rl.Color.red, _cameraBounds);
-
-    var _animManager = try AnimationManager.init(&levelAlloc);
+    var _animManager = try AnimationManager.init(&gpa);
     try _animManager.registerAnimation("bg_1", try RessourceManager.getAnimation("bg_1"));
     try _animManager.setCurrent("bg_1");
 
-    const _testItem = try Item.init(&levelAlloc, Item.ItemType.BOMB, rl.Vector2.init(_screenWidth / 2 + 100, _screenHeight / 2 + 100));
+    const _testItem = try Item.init(&gpa, Item.ItemType.BOMB, rl.Vector2.init(_screenWidth / 2 + 100, _screenHeight / 2 + 100));
 
-    var _items = std.ArrayList(Item).init(levelAlloc);
+    var _items = std.ArrayList(Item).init(gpa);
     try _items.append(_testItem);
 
     return Self{
@@ -60,8 +58,8 @@ pub fn init(_screenWidth: f32, _screenHeight: f32) !Self {
             .rotation = 0,
             .zoom = 1,
         },
-        .enemies = std.ArrayList(Enemy).init(levelAlloc),
-        .bullets = std.ArrayList(Bullet).init(levelAlloc),
+        .enemies = std.ArrayList(Enemy).init(gpa),
+        .bullets = std.ArrayList(Bullet).init(gpa),
         .items = _items,
         .animManager = _animManager,
         .screenWidth = _screenWidth,
@@ -70,38 +68,65 @@ pub fn init(_screenWidth: f32, _screenHeight: f32) !Self {
     };
 }
 
-pub fn deinit(_: *Self) void {
-    levelArena.deinit();
+pub fn deinit(self: *Self) void {
+    self.animManager.deinit();
+
+    for (self.enemies.items) |*enemy| {
+        enemy.deinit();
+    }
+    self.enemies.deinit();
+
+    for (self.bullets.items) |*bullet| {
+        bullet.deinit();
+    }
+    self.bullets.deinit();
+
+    //items
+    // for (self.enemies.items) |enemy| {
+    //     enemy.deinit();
+    // }
+    // self.enemies.deinit();
 }
 
 pub fn update(self: *Self, dt: f32) !void {
     //TODO: add level progression
-
-    // if (self.score >= 10) {
-    //     try self.resetLevel();
-    //     return;
-    // }
-
     try self.player.update(self, dt);
+    try self.updateBullets(dt);
+    try self.updateItems();
+    try self.updateEnemies(dt);
+    self.cameraUpdate(dt);
 
-    for (self.bullets.items) |*bullet| {
-        if (bullet.active)
-            bullet.update(dt);
+    if (self.player.health == 0) {
+        try self.resetLevel();
+        self.mainMenu = true;
     }
+}
 
+fn updateItems(self: *Self) !void {
     for (self.items.items) |*item| {
         if (item.active)
             try item.update(self);
     }
+}
 
-    var activeEnemyCount: usize = 0;
-    for (self.enemies.items) |*enemy| {
-        if (enemy.active) {
-            activeEnemyCount += 1;
+fn updateBullets(self: *Self, dt: f32) !void {
+    var bulletsToRemove = std.ArrayList(usize).init(gpa);
+    defer bulletsToRemove.deinit();
+    for (self.bullets.items, 0..) |*bullet, index| {
+        const active = try bullet.update(dt);
+        if (!active) {
+            try bulletsToRemove.append(index);
         }
     }
 
-    if (activeEnemyCount < 30) {
+    for (bulletsToRemove.items) |index| {
+        var removed = self.bullets.swapRemove(index);
+        removed.deinit();
+    }
+}
+
+fn updateEnemies(self: *Self, dt: f32) !void {
+    if (self.enemies.items.len < 30) {
 
         //TODO: better logic for enemy spawn position
 
@@ -111,35 +136,34 @@ pub fn update(self: *Self, dt: f32) !void {
         const some_random_num = rnd.random().intRangeAtMost(i32, 0, 10);
         switch (some_random_num) {
             0...5 => {
-                try self.enemies.append(try Enemy.init(&levelAlloc, x, y, 0));
+                try self.enemies.append(try Enemy.init(&gpa, x, y, 0));
             },
             6...9 => {
-                try self.enemies.append(try Enemy.init(&levelAlloc, x, y, 1));
+                try self.enemies.append(try Enemy.init(&gpa, x, y, 1));
             },
             10 => {
-                try self.enemies.append(try Enemy.init(&levelAlloc, x, y, 2));
+                try self.enemies.append(try Enemy.init(&gpa, x, y, 2));
             },
             else => {
-                try self.enemies.append(try Enemy.init(&levelAlloc, x, y, 0));
+                try self.enemies.append(try Enemy.init(&gpa, x, y, 0));
             },
         }
     }
-
-    for (self.enemies.items) |*enemy| {
-        if (enemy.active) {
-            enemy.update(self, dt);
+    var enemiesToRemove = std.ArrayList(usize).init(gpa);
+    defer enemiesToRemove.deinit();
+    for (self.enemies.items, 0..) |*enemy, index| {
+        const alive = enemy.update(self, dt);
+        if (!alive) {
+            try enemiesToRemove.append(index);
         }
     }
-
-    self.updateCamera(dt);
-
-    if (self.player.health == 0) {
-        try self.resetLevel();
-        self.mainMenu = true;
+    for (enemiesToRemove.items) |index| {
+        var removed = self.enemies.swapRemove(index);
+        removed.deinit();
     }
 }
 
-fn updateCamera(self: *Self, dt: f32) void {
+fn cameraUpdate(self: *Self, dt: f32) void {
     const lerp = 5;
     self.camera.target.x += (self.player.pos.x - self.camera.target.x) * lerp * dt;
     self.camera.target.y += (self.player.pos.y - self.camera.target.y) * lerp * dt;
@@ -158,27 +182,19 @@ fn updateCamera(self: *Self, dt: f32) void {
 pub fn resetLevel(self: *Self) !void {
     self.wasReset = true;
     self.score = 0;
-    levelArena.deinit();
+    self.deinit();
     self.* = try Self.init(self.screenWidth, self.screenHeight);
 }
 
 pub fn render(self: *Self, dt: f32) !void {
+
+    //dont render if the game was reset
     if (self.wasReset) {
         self.wasReset = false;
         return;
     }
-    const bgSize = 2;
 
-    //rl.drawTexturePro(self.animManager.currentAnimation.spritesheet.spritesheet.*, bgSpriteRect, rl.Rectangle.init(bgSpriteRect.width, bgSpriteRect.height, bgSpriteRect.width * bgSize, bgSpriteRect.height * bgSize), rl.Vector2.init(0, 0), 0, rl.Color.white);
-
-    for (0..100) |w| {
-        for (0..100) |h| {
-            rl.drawTexturePro(self.animManager.currentAnimation.spritesheet.spritesheet.*, bgSpriteRect, rl.Rectangle.init(@as(f32, @floatFromInt(w)) * bgSpriteRect.width * bgSize, @as(f32, @floatFromInt(h)) * bgSpriteRect.height * bgSize, bgSpriteRect.width * bgSize, bgSpriteRect.height * bgSize), rl.Vector2.init(0, 0), 0, rl.Color.white);
-            rl.drawTexturePro(self.animManager.currentAnimation.spritesheet.spritesheet.*, bgSpriteRect, rl.Rectangle.init(-@as(f32, @floatFromInt(w)) * bgSpriteRect.width * bgSize, -@as(f32, @floatFromInt(h)) * bgSpriteRect.height * bgSize, bgSpriteRect.width * bgSize, bgSpriteRect.height * bgSize), rl.Vector2.init(0, 0), 0, rl.Color.white);
-            rl.drawTexturePro(self.animManager.currentAnimation.spritesheet.spritesheet.*, bgSpriteRect, rl.Rectangle.init(@as(f32, @floatFromInt(w)) * bgSpriteRect.width * bgSize, -@as(f32, @floatFromInt(h)) * bgSpriteRect.height * bgSize, bgSpriteRect.width * bgSize, bgSpriteRect.height * bgSize), rl.Vector2.init(0, 0), 0, rl.Color.white);
-            rl.drawTexturePro(self.animManager.currentAnimation.spritesheet.spritesheet.*, bgSpriteRect, rl.Rectangle.init(-@as(f32, @floatFromInt(w)) * bgSpriteRect.width * bgSize, @as(f32, @floatFromInt(h)) * bgSpriteRect.height * bgSize, bgSpriteRect.width * bgSize, bgSpriteRect.height * bgSize), rl.Vector2.init(0, 0), 0, rl.Color.white);
-        }
-    }
+    self.renderBG();
 
     for (self.items.items) |*item| {
         if (item.active)
@@ -186,15 +202,25 @@ pub fn render(self: *Self, dt: f32) !void {
     }
 
     for (self.bullets.items) |*bullet| {
-        if (bullet.active)
-            try bullet.render(dt);
+        try bullet.render(dt);
     }
 
     self.player.render(dt);
 
     for (self.enemies.items) |*enemy| {
-        if (enemy.active) {
-            enemy.render(dt);
+        enemy.render(dt);
+    }
+}
+
+fn renderBG(self: *Self) void {
+    const bgSize = 2;
+
+    for (0..100) |w| {
+        for (0..100) |h| {
+            rl.drawTexturePro(self.animManager.currentAnimation.spritesheet.spritesheet.*, bgSpriteRect, rl.Rectangle.init(@as(f32, @floatFromInt(w)) * bgSpriteRect.width * bgSize, @as(f32, @floatFromInt(h)) * bgSpriteRect.height * bgSize, bgSpriteRect.width * bgSize, bgSpriteRect.height * bgSize), rl.Vector2.init(0, 0), 0, rl.Color.white);
+            rl.drawTexturePro(self.animManager.currentAnimation.spritesheet.spritesheet.*, bgSpriteRect, rl.Rectangle.init(-@as(f32, @floatFromInt(w)) * bgSpriteRect.width * bgSize, -@as(f32, @floatFromInt(h)) * bgSpriteRect.height * bgSize, bgSpriteRect.width * bgSize, bgSpriteRect.height * bgSize), rl.Vector2.init(0, 0), 0, rl.Color.white);
+            rl.drawTexturePro(self.animManager.currentAnimation.spritesheet.spritesheet.*, bgSpriteRect, rl.Rectangle.init(@as(f32, @floatFromInt(w)) * bgSpriteRect.width * bgSize, -@as(f32, @floatFromInt(h)) * bgSpriteRect.height * bgSize, bgSpriteRect.width * bgSize, bgSpriteRect.height * bgSize), rl.Vector2.init(0, 0), 0, rl.Color.white);
+            rl.drawTexturePro(self.animManager.currentAnimation.spritesheet.spritesheet.*, bgSpriteRect, rl.Rectangle.init(-@as(f32, @floatFromInt(w)) * bgSpriteRect.width * bgSize, @as(f32, @floatFromInt(h)) * bgSpriteRect.height * bgSize, bgSpriteRect.width * bgSize, bgSpriteRect.height * bgSize), rl.Vector2.init(0, 0), 0, rl.Color.white);
         }
     }
 }

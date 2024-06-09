@@ -12,7 +12,7 @@ active: bool = true,
 
 pos: rl.Vector2,
 type: usize,
-health: u16,
+health: i16,
 alloc: *std.mem.Allocator,
 animManager: *AnimationManager,
 speed: usize,
@@ -59,15 +59,15 @@ pub fn init(
     return Self{ .pos = rl.Vector2.init(_x, _y), .type = _type, .health = _health, .speed = _speed, .alloc = _alloc, .animManager = _animManager };
 }
 
-pub fn update(self: *Self, gs: *GameState, dt: f32) void {
+pub fn update(self: *Self, gs: *GameState, dt: f32) bool {
     self.wasHitThisFrame = false;
     if (self.markedDead) {
-        self.active = false;
-        return;
+        return false;
     }
 
     self.moveTowardsPlayer(gs, dt);
     self.checkCollisions(gs);
+    return true;
 }
 
 fn moveTowardsPlayer(self: *Self, gs: *GameState, dt: f32) void {
@@ -127,4 +127,8 @@ pub fn render(self: *Self, dt: f32) void {
         const enemyForPlayerColRect = rl.Rectangle.init(self.pos.x - w / 2, self.pos.y - h / 2, w, h);
         rl.drawRectangleLinesEx(enemyForPlayerColRect, 4, rl.Color.white);
     }
+}
+
+pub fn deinit(self: *Self) void {
+    self.animManager.deinit();
 }

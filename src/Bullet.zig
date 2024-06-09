@@ -13,7 +13,6 @@ radius: f32 = 5,
 animManager: *AnimationManager,
 
 markedDead: bool = false,
-active: bool = true,
 lifetime: f32 = 4,
 lifetimer: f32 = 0,
 alloc: *std.mem.Allocator,
@@ -40,7 +39,7 @@ pub fn init(
     return Self{ .alloc = _alloc, .pos = rl.Vector2.init(_x, _y), .dir = _dir, .v = _v, .color = _color, .animManager = _animManager };
 }
 
-pub fn update(self: *Self, dt: f32) void {
+pub fn update(self: *Self, dt: f32) !bool {
     self.lifetimer += dt;
     if (self.lifetimer > self.lifetime) {
         self.markedDead = true;
@@ -48,12 +47,13 @@ pub fn update(self: *Self, dt: f32) void {
 
     if (self.markedDead) {
         if (self.animManager.isCurrentDone()) {
-            self.active = false;
+            return false;
         }
-        return;
+        return true;
     }
     self.pos.x += self.dir.x * self.v * dt;
     self.pos.y += self.dir.y * self.v * dt;
+    return true;
 }
 
 pub fn render(self: *Self, dt: f32) !void {
@@ -69,4 +69,8 @@ pub fn render(self: *Self, dt: f32) !void {
         }
     }
     self.animManager.playCurrent(rl.Rectangle.init(self.pos.x, self.pos.y, bulletSpriteRect.width * sizeMult, bulletSpriteRect.height * sizeMult), rl.Vector2.init(bulletSpriteRect.width * sizeMult / 2, bulletSpriteRect.height * sizeMult / 2), angle, rl.Color.white, dt);
+}
+
+pub fn deinit(self: *Self) void {
+    self.animManager.deinit();
 }
