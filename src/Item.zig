@@ -6,10 +6,7 @@ const Player = @import("Player.zig");
 const RessourceManager = @import("RessourceManager.zig");
 const AnimationManager = @import("AnimationManager.zig");
 
-pub const ItemType = enum {
-    BOMB,
-    HEALTH,
-};
+pub const ItemType = enum { BOMB, HEALTH, SPEED };
 
 itemType: ItemType = undefined,
 pos: rl.Vector2 = undefined,
@@ -21,6 +18,9 @@ const bombRadius: f32 = 400;
 const bombRadiusLifetime: f32 = 2;
 const healthRadius: f32 = 100;
 const healthLifetime: f32 = 0.5;
+const fastRadius: f32 = 50;
+
+const fastLifetime = 10;
 const itemSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 16);
 const sizeMult: f32 = 2.0;
 const Self = @This();
@@ -40,6 +40,11 @@ pub fn init(_alloc: *std.mem.Allocator, _itemType: ItemType, _pos: rl.Vector2) !
             try _animManager.registerAnimation("item_health", try RessourceManager.getAnimation("item_health"));
             try _animManager.setCurrent("item_health");
         },
+        ItemType.SPEED => {
+            soundEffect = try RessourceManager.getSound("health");
+            try _animManager.registerAnimation("item_speed", try RessourceManager.getAnimation("item_speed"));
+            try _animManager.setCurrent("item_speed");
+        },
     }
 
     return Self{ .itemType = _itemType, .pos = _pos, .animManager = _animManager };
@@ -47,10 +52,11 @@ pub fn init(_alloc: *std.mem.Allocator, _itemType: ItemType, _pos: rl.Vector2) !
 
 pub fn update(self: *Self, gs: *GameState, dt: f32) !bool {
     if (self.markedCollected) {
+        if (self.timer == 0) rl.playSound(soundEffect.*);
+        self.timer += dt;
+
         switch (self.itemType) {
             ItemType.BOMB => {
-                if (self.timer == 0) rl.playSound(soundEffect.*);
-                self.timer += dt;
                 if (self.timer > bombRadiusLifetime) {
                     return false;
                 }
@@ -61,10 +67,13 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) !bool {
                 }
             },
             ItemType.HEALTH => {
-                if (self.timer == 0)
-                    rl.playSound(soundEffect.*);
-                self.timer += dt;
                 if (self.timer > healthLifetime) {
+                    return false;
+                }
+            },
+            ItemType.SPEED => {
+                if (self.timer > fastLifetime) {
+                    gs.player.isFast = false;
                     return false;
                 }
             },
@@ -86,6 +95,9 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) !bool {
             ItemType.HEALTH => {
                 gs.player.health += 1;
             },
+            ItemType.SPEED => {
+                gs.player.isFast = true;
+            },
         }
         self.markedCollected = true;
     }
@@ -102,6 +114,10 @@ pub fn render(self: *Self, gs: *GameState, dt: f32) !void {
                 rl.drawCircleLinesV(gs.player.pos, healthRadius - (healthRadius * self.timer / healthLifetime), rl.Color.sky_blue);
                 rl.drawCircleLinesV(gs.player.pos, rm.clamp(healthRadius - 20 - (healthRadius * self.timer / healthLifetime), 0, healthRadius), rl.Color.sky_blue);
                 rl.drawCircleLinesV(gs.player.pos, rm.clamp(healthRadius + 20 - (healthRadius * self.timer / healthLifetime), 0, healthRadius), rl.Color.sky_blue);
+            },
+
+            ItemType.SPEED => {
+                rl.drawCircleLinesV(gs.player.pos, std.math.sin(self.timer * 3) * fastRadius, rl.Color.gold);
             },
         }
         return;

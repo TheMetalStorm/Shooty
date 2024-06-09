@@ -68,7 +68,7 @@ fn setupRessources() !void {
     try RessourceManager.loadSpritesheet("spritesheets/enemy-small.png", 2, 1, 16, 16);
     try RessourceManager.loadSpritesheet("spritesheets/enemy-medium.png", 2, 1, 32, 16);
     try RessourceManager.loadSpritesheet("spritesheets/enemy-big.png", 2, 1, 32, 32);
-    try RessourceManager.loadSpritesheet("spritesheets/power-up.png", 2, 2, 16, 16);
+    try RessourceManager.loadSpritesheet("spritesheets/power-up.png", 2, 3, 16, 16);
 
     try RessourceManager.loadSpritesheet("SpaceShooterAssets/SpaceShooterAssetPack_Characters.png", 5, 10, 8, 8);
     try RessourceManager.loadSpritesheet("SpaceShooterAssets/SpaceShooterAssetPack_BackGrounds.png", 3, 2, 128, 256);
@@ -83,6 +83,7 @@ fn setupRessources() !void {
     try RessourceManager.loadAnimation("enemy_big", "spritesheets/enemy-big.png", 30, &[_]usize{ 0, 1 }, true);
     try RessourceManager.loadAnimation("item_bomb", "spritesheets/power-up.png", 30, &[_]usize{ 0, 1 }, true);
     try RessourceManager.loadAnimation("item_health", "spritesheets/power-up.png", 30, &[_]usize{ 2, 3 }, true);
+    try RessourceManager.loadAnimation("item_speed", "spritesheets/power-up.png", 30, &[_]usize{ 4, 5 }, true);
 
     //INFO: Sound here
     try RessourceManager.loadSound("bullet_fire", "music/bullet_fire.wav");

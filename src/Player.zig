@@ -15,11 +15,13 @@ levelBounds: rl.Rectangle,
 health: usize = 3,
 isInvulnerable: bool = false,
 wasHitThisFrame: bool = false,
+isFast: bool = false,
 
 pub const sizeMult: f32 = 3.0;
 const shipIdleSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 24);
-const speed = 100.0;
-const bulletSpeed = 200.0;
+const normalSpeed: f32 = 100.0;
+const fastSpeed: f32 = 200.0;
+const bulletSpeed: f32 = 200.0;
 const Self = @This();
 
 var texture: rl.Texture2D = undefined;
@@ -67,6 +69,7 @@ fn updateMovement(self: *Self, dt: f32, gs: *GameState) void {
     const dir = rm.vector2Subtract(rl.getScreenToWorld2D(rl.getMousePosition(), gs.camera), rl.Vector2.init(self.pos.x, self.pos.y));
     const dirNorm = rm.vector2Normalize(dir);
     lookDir = dirNorm;
+    const speed = if (self.isFast) fastSpeed else normalSpeed;
     if (rl.isKeyDown(rl.KeyboardKey.key_d)) {
         self.pos.x += speed * dt;
     }

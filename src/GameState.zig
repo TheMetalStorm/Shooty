@@ -45,7 +45,7 @@ pub fn init(_screenWidth: f32, _screenHeight: f32) !Self {
     try _animManager.registerAnimation("bg_1", try RessourceManager.getAnimation("bg_1"));
     try _animManager.setCurrent("bg_1");
 
-    const _testItem = try Item.init(&gpa, Item.ItemType.HEALTH, rl.Vector2.init(_screenWidth / 2 + 100, _screenHeight / 2 + 100));
+    const _testItem = try Item.init(&gpa, Item.ItemType.SPEED, rl.Vector2.init(_screenWidth / 2 + 100, _screenHeight / 2 + 100));
 
     var _items = std.ArrayList(Item).init(gpa);
     try _items.append(_testItem);
