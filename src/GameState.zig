@@ -33,7 +33,7 @@ pub const DEBUG = false;
 const bgSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 128, 256);
 
 //TODO: BUGS: items spawn on edge of world where player can not get to them
-//TODO: balance whena nd how items spawn
+//TODO: balance whena and how items spawn
 //TODO: add sound effects, music
 //TODO: ship it
 
