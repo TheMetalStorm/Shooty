@@ -143,7 +143,6 @@ fn updateEnemies(self: *Self, dt: f32) !void {
         //TODO: better logic for enemy spawn position
 
         const dir = rl.getRandomValue(0, 3);
-        std.debug.print("{d}\n", .{dir});
         var x: i32 = 0;
         var y: i32 = 0;
         const playerX: i32 = @intFromFloat(self.player.pos.x);

@@ -99,14 +99,19 @@ fn checkCollisions(self: *Self, gs: *GameState) void {
         }
     }
 
-    //player collision
-    if (!gs.player.isInvulnerable) {
-        const wP = @as(f32, @floatFromInt(gs.player.animManager.currentAnimation.spritesheet.spriteWidth)) * (Player.sizeMult - playerLenience);
-        const hP = @as(f32, @floatFromInt(gs.player.animManager.currentAnimation.spritesheet.spriteHeight)) * (Player.sizeMult - playerLenience);
-        const playerRect = rl.Rectangle.init(gs.player.pos.x - wP / 2, gs.player.pos.y - hP / 2, wP, hP);
+    const wP = @as(f32, @floatFromInt(gs.player.animManager.currentAnimation.spritesheet.spriteWidth)) * (Player.sizeMult - playerLenience);
+    const hP = @as(f32, @floatFromInt(gs.player.animManager.currentAnimation.spritesheet.spriteHeight)) * (Player.sizeMult - playerLenience);
+    const playerRect = rl.Rectangle.init(gs.player.pos.x - wP / 2, gs.player.pos.y - hP / 2, wP, hP);
 
+    //player collision
+    if (!gs.player.isInvulnerable and !gs.player.isFast) {
         if (rl.checkCollisionRecs(enemyColRect, playerRect)) {
             gs.player.getHurt();
+        }
+    }
+    if (gs.player.isFast) {
+        if (rl.checkCollisionRecs(enemyColRect, playerRect)) {
+            self.markedDead = true;
         }
     }
 }
