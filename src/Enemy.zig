@@ -26,11 +26,12 @@ pub fn init(
     _x: f32,
     _y: f32,
     _type: usize,
+    _curLevel: usize,
 ) !Self {
     var _animManager = try AnimationManager.init(_alloc);
 
     var _health: u8 = 1;
-    var _speed: usize = 40;
+    var _speed: usize = 40 + _curLevel * 5;
 
     switch (_type) {
         0 => {
@@ -41,13 +42,13 @@ pub fn init(
             try _animManager.registerAnimation("enemy_medium", try RessourceManager.getAnimation("enemy_medium"));
             try _animManager.setCurrent("enemy_medium");
             _health = 2;
-            _speed = 30;
+            _speed = 30 + _curLevel * 5;
         },
         2 => {
             try _animManager.registerAnimation("enemy_big", try RessourceManager.getAnimation("enemy_big"));
             try _animManager.setCurrent("enemy_big");
             _health = 3;
-            _speed = 20;
+            _speed = 20 + _curLevel * 5;
         },
         else => {
             try _animManager.registerAnimation("enemy_small", try RessourceManager.getAnimation("enemy_small"));

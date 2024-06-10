@@ -14,13 +14,15 @@ enemies: std.ArrayList(Enemy),
 bullets: std.ArrayList(Bullet),
 items: std.ArrayList(Item),
 animManager: *AnimationManager,
-score: i32 = 0,
+score: usize = 0,
+level: usize = 1,
 wasReset: bool = false,
 mainMenu: bool = true,
 isPaused: bool = false,
 screenWidth: f32,
 screenHeight: f32,
 cameraBounds: rl.Rectangle = undefined,
+allowedItems: usize = 1,
 const Self = @This();
 
 var rnd = RndGen.init(0);
@@ -29,9 +31,9 @@ var gpa: std.mem.Allocator = undefined;
 
 pub const DEBUG = false;
 const bgSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 128, 256);
-//TODO: make game infinetly playable by addding more/faster/different enemies as the player progresses
-//TODO: maybe items? health packs, ammo, weapons, etc.
 
+//TODO: BUGS: items spawn on edge of world where player can not get to them
+//TODO: balance whena nd how items spawn
 //TODO: add sound effects, music
 //TODO: ship it
 
@@ -45,11 +47,6 @@ pub fn init(_screenWidth: f32, _screenHeight: f32) !Self {
     try _animManager.registerAnimation("bg_1", try RessourceManager.getAnimation("bg_1"));
     try _animManager.setCurrent("bg_1");
 
-    const _testItem = try Item.init(&gpa, Item.ItemType.SPEED, rl.Vector2.init(_screenWidth / 2 + 100, _screenHeight / 2 + 100));
-
-    var _items = std.ArrayList(Item).init(gpa);
-    try _items.append(_testItem);
-
     return Self{
         .player = _player,
         .camera = rl.Camera2D{
@@ -60,7 +57,7 @@ pub fn init(_screenWidth: f32, _screenHeight: f32) !Self {
         },
         .enemies = std.ArrayList(Enemy).init(gpa),
         .bullets = std.ArrayList(Bullet).init(gpa),
-        .items = _items,
+        .items = std.ArrayList(Item).init(gpa),
         .animManager = _animManager,
         .screenWidth = _screenWidth,
         .screenHeight = _screenHeight,
@@ -88,7 +85,10 @@ pub fn deinit(self: *Self) void {
 }
 
 pub fn update(self: *Self, dt: f32) !void {
-    //TODO: add level progression
+    self.level = 1 + @divFloor(@as(usize, self.score), 20);
+    if (@mod(@as(usize, self.score), 40) == 0 and self.allowedItems == 0) {
+        self.allowedItems = 1 + @divFloor(@as(usize, self.score), 100);
+    }
     try self.player.update(self, dt);
     try self.updateBullets(dt);
     try self.updateEnemies(dt);
@@ -102,6 +102,23 @@ pub fn update(self: *Self, dt: f32) !void {
 }
 
 fn updateItems(self: *Self, dt: f32) !void {
+    if (self.items.items.len < self.allowedItems) {
+        self.allowedItems -= 1;
+        const playerX: i32 = @intFromFloat(self.player.pos.x);
+        const playerY: i32 = @intFromFloat(self.player.pos.y);
+        const camW: i32 = @intFromFloat(self.cameraBounds.width);
+        const camH: i32 = @intFromFloat(self.cameraBounds.height);
+        const halfCamH = @divFloor(camH, 2);
+        const halfCamW = @divFloor(camW, 2);
+
+        const x = rl.getRandomValue(playerX - halfCamW, playerX + halfCamW);
+        const y = rl.getRandomValue(playerY - halfCamH, playerY + halfCamH);
+        const xF32: f32 = @as(f32, @floatFromInt(x));
+        const yF32: f32 = @as(f32, @floatFromInt(y));
+        const itemType = rl.getRandomValue(0, 2);
+        try self.items.append(try Item.init(&gpa, @enumFromInt(itemType), rl.Vector2.init(xF32, yF32)));
+    }
+
     var itemsToRemove = std.ArrayList(usize).init(gpa);
     defer itemsToRemove.deinit();
 
@@ -138,10 +155,7 @@ fn updateBullets(self: *Self, dt: f32) !void {
 }
 
 fn updateEnemies(self: *Self, dt: f32) !void {
-    if (self.enemies.items.len < 20) {
-
-        //TODO: better logic for enemy spawn position
-
+    if (self.enemies.items.len < 15 + self.level) {
         const dir = rl.getRandomValue(0, 3);
         var x: i32 = 0;
         var y: i32 = 0;
@@ -154,7 +168,6 @@ fn updateEnemies(self: *Self, dt: f32) !void {
 
         switch (dir) {
             //n
-
             0 => {
                 x = rl.getRandomValue(playerX - halfCamW, playerX + halfCamW);
                 y = playerY + halfCamH + 100;
@@ -183,16 +196,16 @@ fn updateEnemies(self: *Self, dt: f32) !void {
         const some_random_num = rnd.random().intRangeAtMost(i32, 0, 10);
         switch (some_random_num) {
             0...5 => {
-                try self.enemies.append(try Enemy.init(&gpa, xF32, yF32, 0));
+                try self.enemies.append(try Enemy.init(&gpa, xF32, yF32, 0, self.level));
             },
             6...9 => {
-                try self.enemies.append(try Enemy.init(&gpa, xF32, yF32, 1));
+                try self.enemies.append(try Enemy.init(&gpa, xF32, yF32, 1, self.level));
             },
             10 => {
-                try self.enemies.append(try Enemy.init(&gpa, xF32, yF32, 2));
+                try self.enemies.append(try Enemy.init(&gpa, xF32, yF32, 2, self.level));
             },
             else => {
-                try self.enemies.append(try Enemy.init(&gpa, xF32, yF32, 0));
+                try self.enemies.append(try Enemy.init(&gpa, xF32, yF32, 0, self.level));
             },
         }
     }
