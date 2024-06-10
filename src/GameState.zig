@@ -138,26 +138,62 @@ fn updateBullets(self: *Self, dt: f32) !void {
 }
 
 fn updateEnemies(self: *Self, dt: f32) !void {
-    if (self.enemies.items.len < 30) {
+    if (self.enemies.items.len < 20) {
 
         //TODO: better logic for enemy spawn position
 
-        const x: f32 = @floatFromInt(rl.getRandomValue(@intFromFloat(-self.cameraBounds.width), @intFromFloat(self.cameraBounds.width)));
-        const y: f32 = @floatFromInt(rl.getRandomValue(@intFromFloat(-self.cameraBounds.height), @intFromFloat(self.cameraBounds.height)));
+        const dir = rl.getRandomValue(0, 3);
+        std.debug.print("{d}\n", .{dir});
+        var x: i32 = 0;
+        var y: i32 = 0;
+        const playerX: i32 = @intFromFloat(self.player.pos.x);
+        const playerY: i32 = @intFromFloat(self.player.pos.y);
+        const camW: i32 = @intFromFloat(self.cameraBounds.width);
+        const camH: i32 = @intFromFloat(self.cameraBounds.height);
+        const halfCamH = @divFloor(camH, 2);
+        const halfCamW = @divFloor(camW, 2);
+
+        switch (dir) {
+            //n
+
+            0 => {
+                x = rl.getRandomValue(playerX - halfCamW, playerX + halfCamW);
+                y = playerY + halfCamH + 100;
+            },
+            //e
+            1 => {
+                x = playerX + halfCamW + 100;
+                y = rl.getRandomValue(playerY - halfCamH, playerY + halfCamH);
+            },
+            //s
+            2 => {
+                x = rl.getRandomValue(playerX - halfCamW, playerX + halfCamW);
+                y = playerY - halfCamH - 100;
+            },
+            //w
+            3 => {
+                x = playerX - halfCamW - 100;
+                y = rl.getRandomValue(playerY - halfCamH, playerY + halfCamH);
+            },
+            else => {},
+        }
+
+        const xF32: f32 = @as(f32, @floatFromInt(x));
+        const yF32: f32 = @as(f32, @floatFromInt(y));
 
         const some_random_num = rnd.random().intRangeAtMost(i32, 0, 10);
         switch (some_random_num) {
             0...5 => {
-                try self.enemies.append(try Enemy.init(&gpa, x, y, 0));
+                try self.enemies.append(try Enemy.init(&gpa, xF32, yF32, 0));
             },
             6...9 => {
-                try self.enemies.append(try Enemy.init(&gpa, x, y, 1));
+                try self.enemies.append(try Enemy.init(&gpa, xF32, yF32, 1));
             },
             10 => {
-                try self.enemies.append(try Enemy.init(&gpa, x, y, 2));
+                try self.enemies.append(try Enemy.init(&gpa, xF32, yF32, 2));
             },
             else => {
-                try self.enemies.append(try Enemy.init(&gpa, x, y, 0));
+                try self.enemies.append(try Enemy.init(&gpa, xF32, yF32, 0));
             },
         }
     }
