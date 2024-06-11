@@ -2,6 +2,8 @@ const Player = @import("Player.zig");
 const Enemy = @import("Enemy.zig");
 const Bullet = @import("Bullet.zig");
 const rl = @import("raylib");
+const rm = @import("raylib-math");
+
 const std = @import("std");
 const AnimationManager = @import("AnimationManager.zig");
 const RessourceManager = @import("RessourceManager.zig");
@@ -22,7 +24,7 @@ isPaused: bool = false,
 screenWidth: f32,
 screenHeight: f32,
 cameraBounds: rl.Rectangle = undefined,
-allowedItems: usize = 1,
+spawnItem: bool = true,
 const Self = @This();
 
 var rnd = RndGen.init(0);
@@ -32,8 +34,7 @@ var gpa: std.mem.Allocator = undefined;
 pub const DEBUG = false;
 const bgSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 128, 256);
 
-//TODO: BUGS: items spawn on edge of world where player can not get to them
-//TODO: balance whena and how items spawn
+//TODO: BUGS: items spawn on outside of screen, limit to level area
 //TODO: add sound effects, music
 //TODO: ship it
 
@@ -41,7 +42,7 @@ pub fn init(_screenWidth: f32, _screenHeight: f32) !Self {
     gpa = general_purpose_allocator.allocator();
 
     const _cameraBounds = rl.Rectangle.init(-_screenWidth / 2, -_screenHeight / 2, _screenWidth, _screenHeight);
-    const _player = try Player.init(&gpa, _screenWidth / 2, _screenHeight / 2, rl.Color.red, _cameraBounds);
+    const _player = try Player.init(&gpa, 0, 0, rl.Color.red, _cameraBounds);
 
     var _animManager = try AnimationManager.init(&gpa);
     try _animManager.registerAnimation("bg_1", try RessourceManager.getAnimation("bg_1"));
@@ -85,9 +86,10 @@ pub fn deinit(self: *Self) void {
 }
 
 pub fn update(self: *Self, dt: f32) !void {
+    const oldLevel = self.level;
     self.level = 1 + @divFloor(@as(usize, self.score), 20);
-    if (@mod(@as(usize, self.score), 40) == 0 and self.allowedItems == 0) {
-        self.allowedItems = 1 + @divFloor(@as(usize, self.score), 100);
+    if (oldLevel != self.level) {
+        self.spawnItem = true;
     }
     try self.player.update(self, dt);
     try self.updateBullets(dt);
@@ -102,8 +104,8 @@ pub fn update(self: *Self, dt: f32) !void {
 }
 
 fn updateItems(self: *Self, dt: f32) !void {
-    if (self.items.items.len < self.allowedItems) {
-        self.allowedItems -= 1;
+    if (self.spawnItem) {
+        self.spawnItem = false;
         const playerX: i32 = @intFromFloat(self.player.pos.x);
         const playerY: i32 = @intFromFloat(self.player.pos.y);
         const camW: i32 = @intFromFloat(self.cameraBounds.width);
@@ -193,7 +195,7 @@ fn updateEnemies(self: *Self, dt: f32) !void {
         const xF32: f32 = @as(f32, @floatFromInt(x));
         const yF32: f32 = @as(f32, @floatFromInt(y));
 
-        const some_random_num = rnd.random().intRangeAtMost(i32, 0, 10);
+        const some_random_num = rl.getRandomValue(0, 10);
         switch (some_random_num) {
             0...5 => {
                 try self.enemies.append(try Enemy.init(&gpa, xF32, yF32, 0, self.level));
@@ -229,15 +231,16 @@ fn cameraUpdate(self: *Self, dt: f32) void {
     const lerp = 5;
     self.camera.target.x += (self.player.pos.x - self.camera.target.x) * lerp * dt;
     self.camera.target.y += (self.player.pos.y - self.camera.target.y) * lerp * dt;
+
     if (self.camera.target.x < self.cameraBounds.x) {
         self.camera.target.x = self.cameraBounds.x;
-    } else if (self.camera.target.x > self.cameraBounds.width) {
-        self.camera.target.x = self.cameraBounds.width;
+    } else if (self.camera.target.x > self.cameraBounds.width / 2) {
+        self.camera.target.x = self.cameraBounds.width / 2;
     }
     if (self.camera.target.y < self.cameraBounds.y) {
         self.camera.target.y = self.cameraBounds.y;
-    } else if (self.camera.target.y > self.cameraBounds.height) {
-        self.camera.target.y = self.cameraBounds.height;
+    } else if (self.camera.target.y > self.cameraBounds.height / 2) {
+        self.camera.target.y = self.cameraBounds.height / 2;
     }
 }
 

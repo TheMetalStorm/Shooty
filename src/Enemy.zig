@@ -31,7 +31,8 @@ pub fn init(
     var _animManager = try AnimationManager.init(_alloc);
 
     var _health: u8 = 1;
-    var _speed: usize = 40 + _curLevel * 5;
+    //clamp to player speed - lenience
+    var _speed: usize = @intFromFloat(rm.clamp(40 + @as(f32, @floatFromInt(_curLevel)) * 5, 0, 100 - 10));
 
     switch (_type) {
         0 => {
