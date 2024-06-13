@@ -25,16 +25,11 @@ pub fn main() !void {
     try setupRessources();
     var gs = try GameState.init(@as(f32, @floatFromInt(screenWidth)), @as(f32, @floatFromInt(screenHeight)));
 
-    const menuMusic = try RessourceManager.getMusic("menu_music");
     const gameMusic = try RessourceManager.getMusic("game_music");
     rl.setMusicVolume(gameMusic.*, 0.3);
 
     while (!rl.windowShouldClose()) {
         if (mainMenu(&gs)) {
-            if (!rl.isMusicStreamPlaying(menuMusic.*)) {
-                rl.playMusicStream(menuMusic.*);
-            }
-            rl.updateMusicStream(menuMusic.*);
             continue;
         }
 
@@ -42,6 +37,7 @@ pub fn main() !void {
             rl.playMusicStream(gameMusic.*);
         }
         rl.updateMusicStream(gameMusic.*);
+
         if (gamePause(&gs)) {
             continue;
         }
@@ -123,29 +119,73 @@ fn gamePause(gs: *GameState) bool {
     return false;
 }
 
+fn helpMenu(gs: *GameState) bool {
+    if (gs.helpMenu) {
+        if (rl.isKeyPressed(rl.KeyboardKey.key_h)) {
+            gs.helpMenu = false;
+            gs.mainMenu = true;
+            return true;
+        }
+
+        return true;
+    }
+    return false;
+}
+
 fn mainMenu(gs: *GameState) bool {
+    const menuMusic = try RessourceManager.getMusic("menu_music");
+
     if (gs.mainMenu) {
-        if (rl.isKeyPressed(rl.KeyboardKey.key_enter)) {
+        if (!rl.isMusicStreamPlaying(menuMusic.*)) {
+            rl.playMusicStream(menuMusic.*);
+        }
+        rl.updateMusicStream(menuMusic.*);
+
+        if (rl.isKeyPressed(rl.KeyboardKey.key_enter) and !gs.helpMenu) {
             gs.mainMenu = false;
             const startSound = try RessourceManager.getSound("start_game");
             rl.playSound(startSound.*);
             return false;
         }
 
-        rl.beginDrawing();
-        rl.clearBackground(rl.Color.black);
-        const gameTitle = "Shooty";
-        const gameTitleFontSize: i32 = 30;
-        const enterText = "Press Enter to Start Game";
-        const enterTextFontSize: i32 = 20;
+        if (rl.isKeyPressed(rl.KeyboardKey.key_h)) {
+            gs.helpMenu = !gs.helpMenu;
+        }
 
-        const gameTitleWidth = rl.measureText(gameTitle, gameTitleFontSize);
-        const enterTextWidth = rl.measureText(enterText, enterTextFontSize);
+        if (gs.helpMenu) {
+            rl.beginDrawing();
+            rl.clearBackground(rl.Color.black);
+            const controls = "Controls";
+            const controlsFontSize: i32 = 30;
 
-        rl.drawText(gameTitle, screenWidth / 2 - @divFloor(gameTitleWidth, 2), screenHeight / 2, gameTitleFontSize, rl.Color.red);
-        rl.drawText(enterText, screenWidth / 2 - @divFloor(enterTextWidth, 2), screenHeight / 2 + 50, enterTextFontSize, rl.Color.red);
+            const gameTitleWidth = rl.measureText(controls, controlsFontSize);
 
-        rl.endDrawing();
+            rl.drawText(controls, screenWidth / 2 - @divFloor(gameTitleWidth, 2), screenHeight + 300, controlsFontSize, rl.Color.red);
+
+            rl.endDrawing();
+        } else {
+            rl.beginDrawing();
+            rl.clearBackground(rl.Color.black);
+            const gameTitle = "Shooty";
+            const gameTitleFontSize: i32 = 60;
+            const help = "Press h for Help";
+            const helpFontSize: i32 = 20;
+            const enterText = "Press Enter to Start Game";
+            const enterTextFontSize: i32 = 30;
+
+            const gameTitleWidth = rl.measureText(gameTitle, gameTitleFontSize);
+            const enterTextWidth = rl.measureText(enterText, enterTextFontSize);
+
+            const helpTextWidth = rl.measureText(help, helpFontSize);
+
+            rl.drawText(gameTitle, screenWidth / 2 - @divFloor(gameTitleWidth, 2), screenHeight / 2 - 100, gameTitleFontSize, rl.Color.red);
+            rl.drawText(enterText, screenWidth / 2 - @divFloor(enterTextWidth, 2), screenHeight / 2 + 50, enterTextFontSize, rl.Color.red);
+
+            rl.drawText(help, screenWidth / 2 - @divFloor(helpTextWidth, 2), screenHeight / 2 + 250, helpFontSize, rl.Color.red);
+
+            rl.endDrawing();
+        }
+
         return true;
     }
     return false;
