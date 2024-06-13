@@ -16,6 +16,7 @@ health: usize = 3,
 isInvulnerable: bool = false,
 wasHitThisFrame: bool = false,
 isFast: bool = false,
+isFastTimer: f32 = 0,
 
 pub const sizeMult: f32 = 3.0;
 const shipIdleSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 24);
@@ -23,6 +24,7 @@ const normalSpeed: f32 = 100.0;
 const fastSpeed: f32 = 200.0;
 const bulletSpeed: f32 = 200.0;
 const Self = @This();
+const fastRadius: f32 = 50;
 
 var texture: rl.Texture2D = undefined;
 var lookDir: rl.Vector2 = undefined;
@@ -30,6 +32,8 @@ var bulletTimer: f32 = 0;
 var bulletWaitTime: f32 = 0.5;
 var invulnerableTimer: f32 = 0;
 var invulnerableTime: f32 = 2;
+pub var isFastTime: f32 = 10;
+
 pub fn getLookDir(_: *Self) rl.Vector2 {
     return lookDir;
 }
@@ -98,6 +102,15 @@ fn updateMovement(self: *Self, dt: f32, gs: *GameState) void {
 }
 
 fn updateInvulnerability(self: *Self, dt: f32) void {
+    std.debug.print("{d}\n", .{self.isFastTimer});
+    if (self.isFast) {
+        self.isFastTimer -= dt;
+    }
+    if (self.isFastTimer <= 0) {
+        self.isFast = false;
+        self.isFastTimer = isFastTime;
+    }
+
     if (self.isInvulnerable) {
         invulnerableTimer -= dt;
     }
@@ -109,9 +122,14 @@ fn updateInvulnerability(self: *Self, dt: f32) void {
 
 pub fn render(self: *Self, dt: f32) void {
     if (self.animManager.animations.count() == 0) return;
+    if (self.isFast) {
+        rl.drawCircleLinesV(self.pos, std.math.sin(self.isFastTimer * 3) * fastRadius, rl.Color.gold);
+    }
+
     const w = shipIdleSpriteRect.width * sizeMult;
     const h = shipIdleSpriteRect.height * sizeMult;
     const viewAngle = @mod(std.math.radiansToDegrees(std.math.atan2(lookDir.y, lookDir.x)) + 360 + 90, 360); // 90 is the offset to make the ship face the mouse
+
     if (self.isInvulnerable) {
         if (@mod(invulnerableTimer, 0.3) < 0.05) {
             self.animManager.playCurrent(rl.Rectangle.init(self.pos.x, self.pos.y, w, h), rl.Vector2.init(w / 2, h / 2), viewAngle, rl.Color.white, dt);

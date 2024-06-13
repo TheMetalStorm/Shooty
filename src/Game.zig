@@ -3,6 +3,8 @@ const rl = @import("raylib");
 const Player = @import("Player.zig");
 const Enemy = @import("Enemy.zig");
 const Bullet = @import("Bullet.zig");
+
+const Item = @import("Item.zig");
 const Animation = @import("Animation.zig");
 const AnimationManager = @import("AnimationManager.zig");
 const GameState = @import("GameState.zig");
@@ -29,17 +31,52 @@ pub fn run() !void {
     rl.initWindow(screenWidth, screenHeight, "Shooty");
     defer rl.closeWindow();
     rl.initAudioDevice();
-
     defer rl.closeAudioDevice();
     rl.setTargetFPS(60);
-
     try RessourceManager.init("src/assets/", ressourceAlloc);
     try setupRessources();
+
     var gs = try GameState.init(@as(f32, @floatFromInt(screenWidth)), @as(f32, @floatFromInt(screenHeight)));
 
+    //temp
+    try gs.items.append(try Item.init(&ressourceAlloc, Item.ItemType.SPEED, rl.Vector2.init(100, 100)));
+    try gs.items.append(try Item.init(&ressourceAlloc, Item.ItemType.SPEED, rl.Vector2.init(120, 100)));
+    //---
     const gameMusic = try RessourceManager.getMusic("game_music");
+    const menuMusic = try RessourceManager.getMusic("menu_music");
     rl.setMusicVolume(gameMusic.*, 0.3);
+    try setupHelpAnims();
 
+    while (!rl.windowShouldClose()) {
+        const dt = rl.getFrameTime();
+
+        //menu
+        if (mainMenu(&gs, dt, menuMusic, gameMusic)) {
+            continue;
+        }
+
+        //ingame
+        handleGameMusic(menuMusic, gameMusic);
+        if (gamePause(&gs)) {
+            continue;
+        }
+        try gs.update(dt);
+        try gs.render(dt);
+    }
+    gs.deinit();
+    RessourceManager.deinit();
+    ressourceArena.deinit();
+}
+
+fn handleGameMusic(menuMusic: *rl.Music, gameMusic: *rl.Music) void {
+    rl.stopMusicStream(menuMusic.*);
+    if (!rl.isMusicStreamPlaying(gameMusic.*)) {
+        rl.playMusicStream(gameMusic.*);
+    }
+    rl.updateMusicStream(gameMusic.*);
+}
+
+fn setupHelpAnims() !void {
     menuItemSpeedAnimManager = try AnimationManager.init(&ressourceAlloc);
     try menuItemSpeedAnimManager.registerAnimation("item_speed", try RessourceManager.getAnimation("item_speed"));
     try menuItemSpeedAnimManager.setCurrent("item_speed");
@@ -52,48 +89,6 @@ pub fn run() !void {
     menuPlayerAnimManager = try AnimationManager.init(&ressourceAlloc);
     try menuPlayerAnimManager.registerAnimation("ship_normal", try RessourceManager.getAnimation("ship_normal"));
     try menuPlayerAnimManager.setCurrent("ship_normal");
-
-    while (!rl.windowShouldClose()) {
-        const dt = rl.getFrameTime();
-
-        if (mainMenu(&gs, dt)) {
-            continue;
-        }
-
-        if (!rl.isMusicStreamPlaying(gameMusic.*)) {
-            rl.playMusicStream(gameMusic.*);
-        }
-        rl.updateMusicStream(gameMusic.*);
-
-        if (gamePause(&gs)) {
-            continue;
-        }
-
-        //update
-
-        try gs.update(dt);
-
-        //render
-        rl.beginDrawing();
-        gs.camera.begin();
-
-        rl.clearBackground(rl.Color.fromInt(0x052c46ff));
-        try gs.render(dt);
-        gs.camera.end();
-        drawGUI(&gs);
-        rl.endDrawing();
-    }
-    gs.deinit();
-    RessourceManager.deinit();
-    ressourceArena.deinit();
-}
-
-fn drawGUI(gs: *GameState) void {
-    rl.drawText(rl.textFormat("Score: %02i", .{gs.score}), 20, 20, 20, rl.Color.red);
-    rl.drawText(rl.textFormat("Level: %02i", .{gs.level}), 200, 20, 20, rl.Color.red);
-    rl.drawText(rl.textFormat("Health: %02i", .{gs.player.health}), 380, 20, 20, rl.Color.red);
-    rl.drawText(rl.textFormat("Frame Time: %02f", .{rl.getFrameTime()}), 20, 60, 20, rl.Color.red);
-    rl.drawText(rl.textFormat("FPS: %.2f", .{1.0 / rl.getFrameTime()}), 20, 80, 20, rl.Color.red);
 }
 
 fn setupRessources() !void {
@@ -159,10 +154,11 @@ fn helpMenu(gs: *GameState) bool {
     return false;
 }
 
-fn mainMenu(gs: *GameState, dt: f32) bool {
-    const menuMusic = try RessourceManager.getMusic("menu_music");
-
+fn mainMenu(gs: *GameState, dt: f32, menuMusic: *rl.Music, gameMusic: *rl.Music) bool {
     if (gs.mainMenu) {
+        if (rl.isMusicStreamPlaying(gameMusic.*)) {
+            rl.stopMusicStream(gameMusic.*);
+        }
         if (!rl.isMusicStreamPlaying(menuMusic.*)) {
             rl.playMusicStream(menuMusic.*);
         }
@@ -180,62 +176,73 @@ fn mainMenu(gs: *GameState, dt: f32) bool {
         }
 
         if (gs.helpMenu) {
-            rl.beginDrawing();
-            rl.clearBackground(rl.Color.black);
-            const sizeMult = 3.0;
-            const sizeMultP = 4.0;
-
-            const wP = shipIdleSpriteRect.width * sizeMultP;
-            const hP = shipIdleSpriteRect.height * sizeMultP;
-            const controls = "Controls";
-            const controlsFontSize: i32 = 30;
-            const controlTextWidth = rl.measureText(controls, controlsFontSize);
-            const controlsExpl = "WASD to move, mouse to aim and left click to shoot.";
-            rl.drawText(controls, screenWidth / 2 - @divFloor(controlTextWidth, 2), screenHeight - 800, controlsFontSize, rl.Color.red);
-            rl.drawText(controlsExpl, 300, screenHeight - 600, controlsFontSize, rl.Color.red);
-            menuPlayerAnimManager.playCurrent(rl.Rectangle.init(200, screenHeight - 600, wP, hP), rl.Vector2.init(wP / 2, wP / 2), 0, rl.Color.white, dt);
-
-            const items = "Items:";
-            const itemsFontSize: i32 = 30;
-            const itemsTitleWidth = rl.measureText(items, itemsFontSize);
-            const speed = "Speed: Your speed improves and any enemy ship you touch is destroyed! (Limited Time Only!)";
-            const health = "Health: Your Ship's armour gets stronger, so you can withstand more enemy hits!";
-            const bomb = "Bomb: A powerful blast that destroys any enemy ship around you!";
-            const wE = itemSpriteRect.width * sizeMult;
-            const hE = itemSpriteRect.height * sizeMult;
-            rl.drawText(items, screenWidth / 2 - @divFloor(itemsTitleWidth, 2), screenHeight - 400, itemsFontSize, rl.Color.red);
-            rl.drawText(health, 300, screenHeight - 100, 25, rl.Color.red);
-            rl.drawText(bomb, 300, screenHeight - 200, 25, rl.Color.red);
-            rl.drawText(speed, 300, screenHeight - 300, 25, rl.Color.red);
-            menuItemHealthAnimManager.playCurrent(rl.Rectangle.init(200, screenHeight - 100, wE, hE), rl.Vector2.init(wE / 2, hE / 2), 0, rl.Color.white, dt);
-            menuItemBombAnimManager.playCurrent(rl.Rectangle.init(200, screenHeight - 200, wE, hE), rl.Vector2.init(wE / 2, hE / 2), 0, rl.Color.white, dt);
-            menuItemSpeedAnimManager.playCurrent(rl.Rectangle.init(200, screenHeight - 300, wE, hE), rl.Vector2.init(wE / 2, hE / 2), 0, rl.Color.white, dt);
-
-            rl.endDrawing();
+            drawHelpMenu(dt);
         } else {
-            rl.beginDrawing();
-            rl.clearBackground(rl.Color.black);
-            const gameTitle = "Shooty";
-            const gameTitleFontSize: i32 = 60;
-            const help = "Press h for Help";
-            const helpFontSize: i32 = 20;
-            const enterText = "Press Enter to Start Game";
-            const enterTextFontSize: i32 = 30;
-
-            const gameTitleWidth = rl.measureText(gameTitle, gameTitleFontSize);
-            const enterTextWidth = rl.measureText(enterText, enterTextFontSize);
-
-            const helpTextWidth = rl.measureText(help, helpFontSize);
-
-            rl.drawText(gameTitle, screenWidth / 2 - @divFloor(gameTitleWidth, 2), screenHeight / 2 - 100, gameTitleFontSize, rl.Color.red);
-            rl.drawText(enterText, screenWidth / 2 - @divFloor(enterTextWidth, 2), screenHeight / 2 + 50, enterTextFontSize, rl.Color.red);
-
-            rl.drawText(help, screenWidth / 2 - @divFloor(helpTextWidth, 2), screenHeight / 2 + 250, helpFontSize, rl.Color.red);
-
-            rl.endDrawing();
+            drawMainMenu();
         }
 
         return true;
     }
     return false;
+}
+
+fn drawMainMenu() void {
+    rl.beginDrawing();
+    rl.clearBackground(rl.Color.black);
+    const gameTitle = "Shooty";
+    const gameTitleFontSize: i32 = 60;
+    const help = "Press h for Help";
+    const helpFontSize: i32 = 20;
+    const enterText = "Press Enter to Start Game";
+    const enterTextFontSize: i32 = 30;
+
+    const gameTitleWidth = rl.measureText(gameTitle, gameTitleFontSize);
+    const enterTextWidth = rl.measureText(enterText, enterTextFontSize);
+
+    const helpTextWidth = rl.measureText(help, helpFontSize);
+
+    rl.drawText(gameTitle, screenWidth / 2 - @divFloor(gameTitleWidth, 2), screenHeight / 2 - 100, gameTitleFontSize, rl.Color.red);
+    rl.drawText(enterText, screenWidth / 2 - @divFloor(enterTextWidth, 2), screenHeight / 2 + 50, enterTextFontSize, rl.Color.red);
+    rl.drawText(help, screenWidth / 2 - @divFloor(helpTextWidth, 2), screenHeight / 2 + 250, helpFontSize, rl.Color.red);
+    rl.endDrawing();
+}
+
+fn drawHelpMenu(dt: f32) void {
+    rl.beginDrawing();
+    rl.clearBackground(rl.Color.black);
+    const sizeMult = 3.0;
+    const sizeMultP = 4.0;
+
+    const wP = shipIdleSpriteRect.width * sizeMultP;
+    const hP = shipIdleSpriteRect.height * sizeMultP;
+    const controls = "Controls:";
+    const controlsFontSize: i32 = 30;
+    const controlTextWidth = rl.measureText(controls, controlsFontSize);
+    const controlsExpl = "Use WASD to move, mouse to aim and left click to shoot. Use p to pause game.";
+    rl.drawText(controls, screenWidth / 2 - @divFloor(controlTextWidth, 2), screenHeight - 800, controlsFontSize, rl.Color.red);
+    rl.drawText(controlsExpl, 300, screenHeight - 600, controlsFontSize, rl.Color.red);
+    menuPlayerAnimManager.playCurrent(rl.Rectangle.init(200, screenHeight - 600, wP, hP), rl.Vector2.init(wP / 2, wP / 2), 0, rl.Color.white, dt);
+
+    const items = "Items:";
+    const itemsFontSize: i32 = 30;
+    const itemsTitleWidth = rl.measureText(items, itemsFontSize);
+    const itemExplanation = "Every Time your level increases, you receive a random item!";
+    const speed = "Speed: Your speed improves and any enemy ship you touch is destroyed! (Limited Time Only!)";
+    const health = "Health: Your ships armour gets stronger, so you can withstand more enemy hits!";
+    const bomb = "Bomb: A powerful blast that destroys any enemy ship around you!";
+
+    const wE = itemSpriteRect.width * sizeMult;
+    const hE = itemSpriteRect.height * sizeMult;
+    rl.drawText(items, screenWidth / 2 - @divFloor(itemsTitleWidth, 2), screenHeight - 500, itemsFontSize, rl.Color.red);
+
+    rl.drawText(health, 300, screenHeight - 100, 25, rl.Color.red);
+    rl.drawText(bomb, 300, screenHeight - 200, 25, rl.Color.red);
+    rl.drawText(speed, 300, screenHeight - 300, 25, rl.Color.red);
+    rl.drawText(itemExplanation, 300, screenHeight - 400, 25, rl.Color.red);
+
+    menuItemHealthAnimManager.playCurrent(rl.Rectangle.init(200, screenHeight - 100, wE, hE), rl.Vector2.init(wE / 2, hE / 2), 0, rl.Color.white, dt);
+    menuItemBombAnimManager.playCurrent(rl.Rectangle.init(200, screenHeight - 200, wE, hE), rl.Vector2.init(wE / 2, hE / 2), 0, rl.Color.white, dt);
+    menuItemSpeedAnimManager.playCurrent(rl.Rectangle.init(200, screenHeight - 300, wE, hE), rl.Vector2.init(wE / 2, hE / 2), 0, rl.Color.white, dt);
+
+    rl.endDrawing();
 }

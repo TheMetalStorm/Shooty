@@ -36,8 +36,9 @@ pub const DEBUG = false;
 const bgSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 128, 256);
 
 //TODO: BUG: sometimes the player gets damaged when he is in speed form (i think it has to do with picking up an item while in speed form)
+//TODO: refactor collision out of enemy class into Game State
 //TODO: add sound effects
-//TODO: ship it
+//TODO: ship it (web)
 
 pub fn init(_screenWidth: f32, _screenHeight: f32) !Self {
     gpa = general_purpose_allocator.allocator();
@@ -251,6 +252,9 @@ pub fn resetLevel(self: *Self) !void {
 }
 
 pub fn render(self: *Self, dt: f32) !void {
+    rl.beginDrawing();
+    rl.clearBackground(rl.Color.fromInt(0x052c46ff));
+    self.camera.begin();
 
     //dont render if the game was reset
     if (self.wasReset) {
@@ -273,6 +277,18 @@ pub fn render(self: *Self, dt: f32) !void {
     for (self.enemies.items) |*enemy| {
         enemy.render(dt);
     }
+
+    self.camera.end();
+    self.drawGUI();
+    rl.endDrawing();
+}
+
+fn drawGUI(self: *Self) void {
+    rl.drawText(rl.textFormat("Score: %02i", .{self.score}), 20, 20, 20, rl.Color.red);
+    rl.drawText(rl.textFormat("Level: %02i", .{self.level}), 200, 20, 20, rl.Color.red);
+    rl.drawText(rl.textFormat("Health: %02i", .{self.player.health}), 380, 20, 20, rl.Color.red);
+    rl.drawText(rl.textFormat("Frame Time: %02f", .{rl.getFrameTime()}), 20, 60, 20, rl.Color.red);
+    rl.drawText(rl.textFormat("FPS: %.2f", .{1.0 / rl.getFrameTime()}), 20, 80, 20, rl.Color.red);
 }
 
 fn renderBG(self: *Self) void {

@@ -18,9 +18,7 @@ const bombRadius: f32 = 400;
 const bombRadiusLifetime: f32 = 2;
 const healthRadius: f32 = 100;
 const healthLifetime: f32 = 0.5;
-const fastRadius: f32 = 50;
 
-const fastLifetime = 10;
 const itemSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 16);
 const sizeMult: f32 = 2.0;
 const Self = @This();
@@ -72,10 +70,8 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) !bool {
                 }
             },
             ItemType.SPEED => {
-                if (self.timer > fastLifetime) {
-                    gs.player.isFast = false;
-                    return false;
-                }
+                //handled by player
+                return false;
             },
         }
         return true;
@@ -96,7 +92,11 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) !bool {
                 gs.player.health += 1;
             },
             ItemType.SPEED => {
-                gs.player.isFast = true;
+                if (gs.player.isFast) {
+                    gs.player.isFastTimer += Player.isFastTime;
+                } else {
+                    gs.player.isFast = true;
+                }
             },
         }
         self.markedCollected = true;
@@ -117,7 +117,7 @@ pub fn render(self: *Self, gs: *GameState, dt: f32) !void {
             },
 
             ItemType.SPEED => {
-                rl.drawCircleLinesV(gs.player.pos, std.math.sin(self.timer * 3) * fastRadius, rl.Color.gold);
+                //handled by player
             },
         }
         return;

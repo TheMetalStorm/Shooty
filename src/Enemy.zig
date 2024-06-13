@@ -106,14 +106,14 @@ fn checkCollisions(self: *Self, gs: *GameState) void {
     const playerRect = rl.Rectangle.init(gs.player.pos.x - wP / 2, gs.player.pos.y - hP / 2, wP, hP);
 
     //player collision
-    if (!gs.player.isInvulnerable and !gs.player.isFast) {
-        if (rl.checkCollisionRecs(enemyColRect, playerRect)) {
-            gs.player.getHurt();
-        }
-    }
+    if (gs.player.isInvulnerable) return;
     if (gs.player.isFast) {
         if (rl.checkCollisionRecs(enemyColRect, playerRect)) {
             self.markedDead = true;
+        }
+    } else {
+        if (rl.checkCollisionRecs(enemyColRect, playerRect)) {
+            gs.player.getHurt();
         }
     }
 }
