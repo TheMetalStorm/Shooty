@@ -34,7 +34,6 @@ var gpa: std.mem.Allocator = undefined;
 pub const DEBUG = false;
 const bgSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 128, 256);
 
-//TODO: BUGS: items spawn on outside of screen, limit to level area
 //TODO: add sound effects, music
 //TODO: ship it
 
@@ -113,12 +112,10 @@ fn updateItems(self: *Self, dt: f32) !void {
         const halfCamH = @divFloor(camH, 2);
         const halfCamW = @divFloor(camW, 2);
 
-        const x = rl.getRandomValue(playerX - halfCamW, playerX + halfCamW);
-        const y = rl.getRandomValue(playerY - halfCamH, playerY + halfCamH);
-        const xF32: f32 = @as(f32, @floatFromInt(x));
-        const yF32: f32 = @as(f32, @floatFromInt(y));
+        const x = rm.clamp(@as(f32, @floatFromInt(rl.getRandomValue(playerX - halfCamW, playerX + halfCamW))), -self.cameraBounds.width, self.cameraBounds.width);
+        const y = rm.clamp(@as(f32, @floatFromInt(rl.getRandomValue(playerY - halfCamH, playerY + halfCamH))), -self.cameraBounds.height, self.cameraBounds.height);
         const itemType = rl.getRandomValue(0, 2);
-        try self.items.append(try Item.init(&gpa, @enumFromInt(itemType), rl.Vector2.init(xF32, yF32)));
+        try self.items.append(try Item.init(&gpa, @enumFromInt(itemType), rl.Vector2.init(x, y)));
     }
 
     var itemsToRemove = std.ArrayList(usize).init(gpa);
