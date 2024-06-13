@@ -25,11 +25,23 @@ pub fn main() !void {
     try setupRessources();
     var gs = try GameState.init(@as(f32, @floatFromInt(screenWidth)), @as(f32, @floatFromInt(screenHeight)));
 
+    const menuMusic = try RessourceManager.getMusic("menu_music");
+    const gameMusic = try RessourceManager.getMusic("game_music");
+    rl.setMusicVolume(gameMusic.*, 0.3);
+
     while (!rl.windowShouldClose()) {
         if (mainMenu(&gs)) {
+            if (!rl.isMusicStreamPlaying(menuMusic.*)) {
+                rl.playMusicStream(menuMusic.*);
+            }
+            rl.updateMusicStream(menuMusic.*);
             continue;
         }
 
+        if (!rl.isMusicStreamPlaying(gameMusic.*)) {
+            rl.playMusicStream(gameMusic.*);
+        }
+        rl.updateMusicStream(gameMusic.*);
         if (gamePause(&gs)) {
             continue;
         }
@@ -90,6 +102,11 @@ fn setupRessources() !void {
     try RessourceManager.loadSound("bullet_fire", "music/bullet_fire.wav");
     try RessourceManager.loadSound("bomb", "music/bomb.wav");
     try RessourceManager.loadSound("health", "music/health.wav");
+    try RessourceManager.loadSound("start_game", "music/Space Music Pack/fx/start-level.wav");
+
+    //INFO: Music here
+    try RessourceManager.loadMusic("menu_music", "music/Space Music Pack/menu.wav");
+    try RessourceManager.loadMusic("game_music", "music/Space Music Pack/battle.wav");
 }
 
 fn gamePause(gs: *GameState) bool {
@@ -110,6 +127,8 @@ fn mainMenu(gs: *GameState) bool {
     if (gs.mainMenu) {
         if (rl.isKeyPressed(rl.KeyboardKey.key_enter)) {
             gs.mainMenu = false;
+            const startSound = try RessourceManager.getSound("start_game");
+            rl.playSound(startSound.*);
             return false;
         }
 

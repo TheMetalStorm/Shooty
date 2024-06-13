@@ -84,8 +84,6 @@ fn updateMovement(self: *Self, dt: f32, gs: *GameState) void {
         self.pos.y += speed * dt;
     }
 
-    std.debug.print("PLAYER: {any}\n", .{self.pos});
-
     if (self.pos.x < -self.levelBounds.width) {
         self.pos.x = -self.levelBounds.width;
     } else if (self.pos.x > self.levelBounds.width) {

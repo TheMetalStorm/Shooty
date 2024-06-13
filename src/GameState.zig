@@ -34,7 +34,8 @@ var gpa: std.mem.Allocator = undefined;
 pub const DEBUG = false;
 const bgSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 128, 256);
 
-//TODO: add sound effects, music
+//TODO: BUG: sometimes the player gets damaged when he is in speed form (i think it has to do with picking up an item while in speed form)
+//TODO: add sound effects
 //TODO: ship it
 
 pub fn init(_screenWidth: f32, _screenHeight: f32) !Self {
