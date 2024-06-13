@@ -4,6 +4,7 @@ const Player = @import("Player.zig");
 const Enemy = @import("Enemy.zig");
 const Bullet = @import("Bullet.zig");
 const Animation = @import("Animation.zig");
+const AnimationManager = @import("AnimationManager.zig");
 const GameState = @import("GameState.zig");
 const Spritesheet = @import("Spritesheet.zig");
 const RessourceManager = @import("RessourceManager.zig");
@@ -11,6 +12,17 @@ const RessourceManager = @import("RessourceManager.zig");
 const c = @cImport({
     @cInclude("raylib.h");
 });
+
+var ressourceArena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+var ressourceAlloc = ressourceArena.allocator();
+var menuItemSpeedAnimManager: *AnimationManager = undefined;
+var menuItemHealthAnimManager: *AnimationManager = undefined;
+var menuItemBombAnimManager: *AnimationManager = undefined;
+var menuPlayerAnimManager: *AnimationManager = undefined;
+
+const itemSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 16);
+const shipIdleSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 24);
+
 const screenWidth = 1600;
 const screenHeight = 900;
 pub fn main() !void {
@@ -21,15 +33,29 @@ pub fn main() !void {
     defer rl.closeAudioDevice();
     rl.setTargetFPS(60);
 
-    try RessourceManager.init("src/assets/");
+    try RessourceManager.init("src/assets/", ressourceAlloc);
     try setupRessources();
     var gs = try GameState.init(@as(f32, @floatFromInt(screenWidth)), @as(f32, @floatFromInt(screenHeight)));
 
     const gameMusic = try RessourceManager.getMusic("game_music");
     rl.setMusicVolume(gameMusic.*, 0.3);
 
+    menuItemSpeedAnimManager = try AnimationManager.init(&ressourceAlloc);
+    try menuItemSpeedAnimManager.registerAnimation("item_speed", try RessourceManager.getAnimation("item_speed"));
+    try menuItemSpeedAnimManager.setCurrent("item_speed");
+    menuItemHealthAnimManager = try AnimationManager.init(&ressourceAlloc);
+    try menuItemHealthAnimManager.registerAnimation("item_health", try RessourceManager.getAnimation("item_health"));
+    try menuItemHealthAnimManager.setCurrent("item_health");
+    menuItemBombAnimManager = try AnimationManager.init(&ressourceAlloc);
+    try menuItemBombAnimManager.registerAnimation("item_bomb", try RessourceManager.getAnimation("item_bomb"));
+    try menuItemBombAnimManager.setCurrent("item_bomb");
+    menuPlayerAnimManager = try AnimationManager.init(&ressourceAlloc);
+    try menuPlayerAnimManager.registerAnimation("ship_normal", try RessourceManager.getAnimation("ship_normal"));
+    try menuPlayerAnimManager.setCurrent("ship_normal");
     while (!rl.windowShouldClose()) {
-        if (mainMenu(&gs)) {
+        const dt = rl.getFrameTime();
+
+        if (mainMenu(&gs, dt)) {
             continue;
         }
 
@@ -43,7 +69,6 @@ pub fn main() !void {
         }
 
         //update
-        const dt = rl.getFrameTime();
 
         try gs.update(dt);
 
@@ -59,6 +84,7 @@ pub fn main() !void {
     }
     gs.deinit();
     RessourceManager.deinit();
+    ressourceArena.deinit();
 }
 
 fn drawGUI(gs: *GameState) void {
@@ -132,7 +158,7 @@ fn helpMenu(gs: *GameState) bool {
     return false;
 }
 
-fn mainMenu(gs: *GameState) bool {
+fn mainMenu(gs: *GameState, dt: f32) bool {
     const menuMusic = try RessourceManager.getMusic("menu_music");
 
     if (gs.mainMenu) {
@@ -155,12 +181,34 @@ fn mainMenu(gs: *GameState) bool {
         if (gs.helpMenu) {
             rl.beginDrawing();
             rl.clearBackground(rl.Color.black);
+            const sizeMult = 3.0;
+            const sizeMultP = 4.0;
+
+            const wP = shipIdleSpriteRect.width * sizeMultP;
+            const hP = shipIdleSpriteRect.height * sizeMultP;
             const controls = "Controls";
             const controlsFontSize: i32 = 30;
+            const controlTextWidth = rl.measureText(controls, controlsFontSize);
+            const controlsExpl = "WASD to move, mouse to aim and left click to shoot.";
+            rl.drawText(controls, screenWidth / 2 - @divFloor(controlTextWidth, 2), screenHeight - 800, controlsFontSize, rl.Color.red);
+            rl.drawText(controlsExpl, 300, screenHeight - 600, controlsFontSize, rl.Color.red);
+            menuPlayerAnimManager.playCurrent(rl.Rectangle.init(200, screenHeight - 600, wP, hP), rl.Vector2.init(wP / 2, wP / 2), 0, rl.Color.white, dt);
 
-            const gameTitleWidth = rl.measureText(controls, controlsFontSize);
-
-            rl.drawText(controls, screenWidth / 2 - @divFloor(gameTitleWidth, 2), screenHeight + 300, controlsFontSize, rl.Color.red);
+            const items = "Items:";
+            const itemsFontSize: i32 = 30;
+            const itemsTitleWidth = rl.measureText(items, itemsFontSize);
+            const speed = "Speed: Your speed improves and any enemy ship you touch is destroyed! (Limited Time Only!)";
+            const health = "Health: Your Ship's armour gets stronger, so you can withstand more enemy hits!";
+            const bomb = "Bomb: A powerful blast that destroys any enemy ship around you!";
+            const wE = itemSpriteRect.width * sizeMult;
+            const hE = itemSpriteRect.height * sizeMult;
+            rl.drawText(items, screenWidth / 2 - @divFloor(itemsTitleWidth, 2), screenHeight - 400, itemsFontSize, rl.Color.red);
+            rl.drawText(health, 300, screenHeight - 100, 25, rl.Color.red);
+            rl.drawText(bomb, 300, screenHeight - 200, 25, rl.Color.red);
+            rl.drawText(speed, 300, screenHeight - 300, 25, rl.Color.red);
+            menuItemHealthAnimManager.playCurrent(rl.Rectangle.init(200, screenHeight - 100, wE, hE), rl.Vector2.init(wE / 2, hE / 2), 0, rl.Color.white, dt);
+            menuItemBombAnimManager.playCurrent(rl.Rectangle.init(200, screenHeight - 200, wE, hE), rl.Vector2.init(wE / 2, hE / 2), 0, rl.Color.white, dt);
+            menuItemSpeedAnimManager.playCurrent(rl.Rectangle.init(200, screenHeight - 300, wE, hE), rl.Vector2.init(wE / 2, hE / 2), 0, rl.Color.white, dt);
 
             rl.endDrawing();
         } else {

@@ -6,15 +6,16 @@ const Animation = @import("Animation.zig");
 const Spritesheet = @import("Spritesheet.zig");
 
 var assetPath: []const u8 = undefined;
-var ressourceArena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-pub const ressourceAlloc = ressourceArena.allocator();
+
 const Self = @This();
 var spritesheets: std.StringHashMap(*Spritesheet) = undefined;
 var animations: std.StringHashMap(*Animation) = undefined;
 var sounds: std.StringHashMap(*rl.Sound) = undefined;
 var music: std.StringHashMap(*rl.Music) = undefined;
+var ressourceAlloc: std.mem.Allocator = undefined;
 
-pub fn init(_assetPath: []const u8) !void {
+pub fn init(_assetPath: []const u8, _alloc: std.mem.Allocator) !void {
+    ressourceAlloc = _alloc;
     assetPath = _assetPath;
     spritesheets = std.StringHashMap(*Spritesheet).init(ressourceAlloc);
     animations = std.StringHashMap(*Animation).init(ressourceAlloc);
@@ -108,6 +109,4 @@ pub fn deinit() void {
     while (sIterator.next()) |key| {
         spritesheets.get(key.*).?.deinit();
     }
-
-    ressourceArena.deinit();
 }
