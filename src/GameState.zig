@@ -36,6 +36,7 @@ pub const DEBUG = false;
 const bgSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 128, 256);
 
 //TODO: refactor collision out of enemy class into Game State
+//TODO: very unbalanced, enemies get too fast, too many items
 //TODO: add sound effects
 //TODO: ship it (web)
 
@@ -89,7 +90,7 @@ pub fn deinit(self: *Self) void {
 pub fn update(self: *Self, dt: f32) !void {
     const oldLevel = self.level;
     self.level = 1 + @divFloor(@as(usize, self.score), 20);
-    if (oldLevel != self.level) {
+    if (oldLevel != self.level and self.level % 2 == 1) {
         self.spawnItem = true;
     }
     try self.player.update(self, dt);

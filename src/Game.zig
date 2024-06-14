@@ -38,10 +38,6 @@ pub fn run() !void {
 
     var gs = try GameState.init(@as(f32, @floatFromInt(screenWidth)), @as(f32, @floatFromInt(screenHeight)));
 
-    //temp
-    try gs.items.append(try Item.init(&ressourceAlloc, Item.ItemType.SPEED, rl.Vector2.init(100, 100)));
-    try gs.items.append(try Item.init(&ressourceAlloc, Item.ItemType.SPEED, rl.Vector2.init(120, 100)));
-    //---
     const gameMusic = try RessourceManager.getMusic("game_music");
     const menuMusic = try RessourceManager.getMusic("menu_music");
     rl.setMusicVolume(gameMusic.*, 0.3);
@@ -61,6 +57,7 @@ pub fn run() !void {
             continue;
         }
         try gs.update(dt);
+
         try gs.render(dt);
     }
     gs.deinit();

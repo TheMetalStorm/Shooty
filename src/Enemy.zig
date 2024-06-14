@@ -32,8 +32,7 @@ pub fn init(
 
     var _health: u8 = 1;
     //clamp to player speed - lenience
-    var _speed: usize = @intFromFloat(rm.clamp(40 + @as(f32, @floatFromInt(_curLevel)) * 5, 0, 100 - 10));
-
+    var enemyBaseSpeed: f32 = 40;
     switch (_type) {
         0 => {
             try _animManager.registerAnimation("enemy_small", try RessourceManager.getAnimation("enemy_small"));
@@ -43,19 +42,21 @@ pub fn init(
             try _animManager.registerAnimation("enemy_medium", try RessourceManager.getAnimation("enemy_medium"));
             try _animManager.setCurrent("enemy_medium");
             _health = 2;
-            _speed = 30 + _curLevel * 5;
+            enemyBaseSpeed = 30;
         },
         2 => {
             try _animManager.registerAnimation("enemy_big", try RessourceManager.getAnimation("enemy_big"));
             try _animManager.setCurrent("enemy_big");
             _health = 3;
-            _speed = 20 + _curLevel * 5;
+            enemyBaseSpeed = 20;
         },
         else => {
             try _animManager.registerAnimation("enemy_small", try RessourceManager.getAnimation("enemy_small"));
             try _animManager.setCurrent("enemy_small");
         },
     }
+
+    const _speed: usize = @intFromFloat(rm.clamp(enemyBaseSpeed + @as(f32, @floatFromInt(_curLevel)) * 3, 0, 100 - 10));
 
     return Self{ .pos = rl.Vector2.init(_x, _y), .type = _type, .health = _health, .speed = _speed, .alloc = _alloc, .animManager = _animManager };
 }

@@ -46,6 +46,9 @@ pub fn init(_alloc: *std.mem.Allocator, _x: f32, _y: f32, _color: rl.Color, _lev
 }
 
 pub fn update(self: *Self, gs: *GameState, dt: f32) !void {
+    if (self.health > 5) {
+        self.health = 5;
+    }
     self.wasHitThisFrame = false;
 
     self.updateInvulnerability(dt);

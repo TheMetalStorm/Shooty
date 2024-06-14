@@ -93,7 +93,7 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) !bool {
             },
             ItemType.SPEED => {
                 if (gs.player.isFast) {
-                    gs.player.isFastTimer += Player.isFastTime;
+                    gs.player.isFastTimer = Player.isFastTime;
                 } else {
                     gs.player.isFast = true;
                 }
