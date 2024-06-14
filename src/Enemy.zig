@@ -56,8 +56,9 @@ pub fn init(
         },
     }
 
-    const _speed: usize = @intFromFloat(rm.clamp(enemyBaseSpeed + @as(f32, @floatFromInt(_curLevel)) * 3, 0, 100 - 10));
-
+    var _speed: usize = @intFromFloat(rm.clamp(enemyBaseSpeed + @as(f32, @floatFromInt(_curLevel)) * 3, 0, 100 - 10));
+    const a = rl.getRandomValue(0, 2);
+    if (a == 0) _speed += @as(usize, @intFromFloat(enemyBaseSpeed));
     return Self{ .pos = rl.Vector2.init(_x, _y), .type = _type, .health = _health, .speed = _speed, .alloc = _alloc, .animManager = _animManager };
 }
 

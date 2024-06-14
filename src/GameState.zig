@@ -36,7 +36,7 @@ pub const DEBUG = false;
 const bgSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 128, 256);
 
 //TODO: refactor collision out of enemy class into Game State
-//TODO: very unbalanced, enemies get too fast, too many items
+//TODO: very unbalanced,
 //TODO: add sound effects
 //TODO: ship it (web)
 

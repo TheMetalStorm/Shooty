@@ -215,17 +215,17 @@ fn drawHelpMenu(dt: f32) void {
     const controls = "Controls:";
     const controlsFontSize: i32 = 30;
     const controlTextWidth = rl.measureText(controls, controlsFontSize);
-    const controlsExpl = "Use WASD to move, mouse to aim and left click to shoot. Use p to pause game.";
+    const controlsExpl = "Use WASD to move, mouse to aim and left click to shoot. \nUse p to pause game. \nUse h to return to main menu.";
     rl.drawText(controls, screenWidth / 2 - @divFloor(controlTextWidth, 2), screenHeight - 800, controlsFontSize, rl.Color.red);
-    rl.drawText(controlsExpl, 300, screenHeight - 600, controlsFontSize, rl.Color.red);
+    rl.drawText(controlsExpl, 300, screenHeight - 650, controlsFontSize, rl.Color.red);
     menuPlayerAnimManager.playCurrent(rl.Rectangle.init(200, screenHeight - 600, wP, hP), rl.Vector2.init(wP / 2, wP / 2), 0, rl.Color.white, dt);
 
     const items = "Items:";
     const itemsFontSize: i32 = 30;
     const itemsTitleWidth = rl.measureText(items, itemsFontSize);
-    const itemExplanation = "Every Time your level increases, you receive a random item!";
+    const itemExplanation = "Every Time your level increases by 2, a random item appears! But watch out, they dissapear \nafter some time!";
     const speed = "Speed: Your speed improves and any enemy ship you touch is destroyed! (Limited Time Only!)";
-    const health = "Health: Your ships armour gets stronger, so you can withstand more enemy hits!";
+    const health = "Health: Your ships armour gets stronger, so you can withstand more enemy hits! MAX 5!";
     const bomb = "Bomb: A powerful blast that destroys any enemy ship around you!";
 
     const wE = itemSpriteRect.width * sizeMult;

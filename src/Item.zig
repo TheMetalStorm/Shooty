@@ -13,11 +13,13 @@ pos: rl.Vector2 = undefined,
 animManager: *AnimationManager = undefined,
 markedCollected: bool = false,
 timer: f32 = 0,
+existenceTimer: f32 = 0,
 var soundEffect: *rl.Sound = undefined;
 const bombRadius: f32 = 400;
 const bombRadiusLifetime: f32 = 2;
 const healthRadius: f32 = 100;
 const healthLifetime: f32 = 0.5;
+const existenceLifetime: f32 = 10;
 
 const itemSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 16);
 const sizeMult: f32 = 2.0;
@@ -75,6 +77,11 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) !bool {
             },
         }
         return true;
+    }
+
+    self.existenceTimer += dt;
+    if (self.existenceTimer > existenceLifetime) {
+        return false;
     }
 
     const wP = @as(f32, @floatFromInt(gs.player.animManager.currentAnimation.spritesheet.spriteWidth)) * (Player.sizeMult);
