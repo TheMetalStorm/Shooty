@@ -105,7 +105,6 @@ fn updateMovement(self: *Self, dt: f32, gs: *GameState) void {
 }
 
 fn updateInvulnerability(self: *Self, dt: f32) void {
-    std.debug.print("{d}\n", .{self.isFastTimer});
     if (self.isFast) {
         self.isFastTimer -= dt;
     }

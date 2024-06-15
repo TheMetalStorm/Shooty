@@ -37,9 +37,6 @@ pub var lastScore: usize = 0;
 pub const DEBUG = false;
 const bgSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 128, 256);
 
-//TODO: enemy spawn inside viewing window?
-//TODO: ship it
-
 pub fn init(_screenWidth: f32, _screenHeight: f32) !Self {
     gpa = general_purpose_allocator.allocator();
 
@@ -168,25 +165,31 @@ fn updateEnemies(self: *Self, dt: f32) !void {
         const halfCamH = @divFloor(camH, 2);
         const halfCamW = @divFloor(camW, 2);
 
+        const upLeft = rl.getScreenToWorld2D(rl.Vector2.init(0, 0), self.camera);
+        const upRight = rl.getScreenToWorld2D(rl.Vector2.init(@floatFromInt(camW), 0), self.camera);
+
+        const downLeft = rl.getScreenToWorld2D(rl.Vector2.init(0, @floatFromInt(camH)), self.camera);
+
         switch (dir) {
+
             //n
             0 => {
+                y = @as(i32, @intFromFloat(upLeft.y)) - 100;
                 x = rl.getRandomValue(playerX - halfCamW, playerX + halfCamW);
-                y = playerY + halfCamH + 100;
             },
             //e
             1 => {
-                x = playerX + halfCamW + 100;
+                x = @as(i32, @intFromFloat(upRight.x)) + 100;
                 y = rl.getRandomValue(playerY - halfCamH, playerY + halfCamH);
             },
             //s
             2 => {
                 x = rl.getRandomValue(playerX - halfCamW, playerX + halfCamW);
-                y = playerY - halfCamH - 100;
+                y = @as(i32, @intFromFloat(downLeft.y)) + 100;
             },
             //w
             3 => {
-                x = playerX - halfCamW - 100;
+                x = @as(i32, @intFromFloat(downLeft.x)) - 100;
                 y = rl.getRandomValue(playerY - halfCamH, playerY + halfCamH);
             },
             else => {},
@@ -288,8 +291,8 @@ fn drawGUI(self: *Self) void {
     rl.drawText(rl.textFormat("Score: %02i", .{self.score}), 20, 20, 20, rl.Color.red);
     rl.drawText(rl.textFormat("Level: %02i", .{self.level}), 200, 20, 20, rl.Color.red);
     rl.drawText(rl.textFormat("Health: %02i", .{self.player.health}), 380, 20, 20, rl.Color.red);
-    rl.drawText(rl.textFormat("Frame Time: %02f", .{rl.getFrameTime()}), 20, 60, 20, rl.Color.red);
-    rl.drawText(rl.textFormat("FPS: %.2f", .{1.0 / rl.getFrameTime()}), 20, 80, 20, rl.Color.red);
+    // rl.drawText(rl.textFormat("Frame Time: %02f", .{rl.getFrameTime()}), 20, 60, 20, rl.Color.red);
+    // rl.drawText(rl.textFormat("FPS: %.2f", .{1.0 / rl.getFrameTime()}), 20, 80, 20, rl.Color.red);
 }
 
 fn renderBG(self: *Self) void {
