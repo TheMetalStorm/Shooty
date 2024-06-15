@@ -47,4 +47,9 @@ pub fn build(b: *std.Build) !void {
     run_step.dependOn(&run_cmd.step);
 
     b.installArtifact(exe);
+    b.installDirectory(.{
+        .install_dir = std.Build.InstallDir{ .custom = "bin" },
+        .install_subdir = "assets",
+        .source_dir = b.path("assets"),
+    });
 }
