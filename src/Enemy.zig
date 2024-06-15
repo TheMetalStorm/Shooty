@@ -66,6 +66,8 @@ pub fn update(self: *Self, gs: *GameState, dt: f32) bool {
     self.wasHitThisFrame = false;
     if (self.markedDead) {
         gs.score += 1;
+        const deathSound = try RessourceManager.getSound("enemy_dead");
+        rl.playSound(deathSound.*);
         return false;
     }
 

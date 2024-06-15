@@ -20,7 +20,6 @@ var menuItemSpeedAnimManager: *AnimationManager = undefined;
 var menuItemHealthAnimManager: *AnimationManager = undefined;
 var menuItemBombAnimManager: *AnimationManager = undefined;
 var menuPlayerAnimManager: *AnimationManager = undefined;
-
 const itemSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 16);
 const shipIdleSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 16, 24);
 
@@ -33,7 +32,12 @@ pub fn run() !void {
     rl.initAudioDevice();
     defer rl.closeAudioDevice();
     rl.setTargetFPS(60);
-    try RessourceManager.init("src/assets/", ressourceAlloc);
+
+    const wd = rl.getWorkingDirectory();
+    const assetsDir = "/assets/";
+    const fullAssetDir = try std.fmt.allocPrint(ressourceAlloc, "{s}{s}", .{ wd, assetsDir });
+
+    try RessourceManager.init(fullAssetDir, ressourceAlloc);
     try setupRessources();
 
     var gs = try GameState.init(@as(f32, @floatFromInt(screenWidth)), @as(f32, @floatFromInt(screenHeight)));
@@ -117,6 +121,7 @@ fn setupRessources() !void {
     try RessourceManager.loadSound("bullet_fire", "music/bullet_fire.wav");
     try RessourceManager.loadSound("bomb", "music/bomb.wav");
     try RessourceManager.loadSound("health", "music/health.wav");
+    try RessourceManager.loadSound("enemy_dead", "music/enemy_dead.wav");
     try RessourceManager.loadSound("start_game", "music/Space Music Pack/fx/start-level.wav");
 
     //INFO: Music here
@@ -201,6 +206,10 @@ fn drawMainMenu() void {
     rl.drawText(gameTitle, screenWidth / 2 - @divFloor(gameTitleWidth, 2), screenHeight / 2 - 100, gameTitleFontSize, rl.Color.red);
     rl.drawText(enterText, screenWidth / 2 - @divFloor(enterTextWidth, 2), screenHeight / 2 + 50, enterTextFontSize, rl.Color.red);
     rl.drawText(help, screenWidth / 2 - @divFloor(helpTextWidth, 2), screenHeight / 2 + 250, helpFontSize, rl.Color.red);
+
+    if (GameState.lastScore > 0) {
+        rl.drawText(rl.textFormat("Last Score: %02i", .{GameState.lastScore}), 20, 20, 20, rl.Color.red);
+    }
     rl.endDrawing();
 }
 

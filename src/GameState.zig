@@ -26,19 +26,20 @@ screenWidth: f32,
 screenHeight: f32,
 cameraBounds: rl.Rectangle = undefined,
 spawnItem: bool = true,
+
 const Self = @This();
 
 var rnd = RndGen.init(0);
 var general_purpose_allocator = std.heap.GeneralPurposeAllocator(.{}){};
 var gpa: std.mem.Allocator = undefined;
+pub var lastScore: usize = 0;
 
 pub const DEBUG = false;
 const bgSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 128, 256);
 
-//TODO: refactor collision out of enemy class into Game State
-//TODO: very unbalanced,
+//TODO: enemy spawn inside viewing window?
 //TODO: add sound effects
-//TODO: ship it (web)
+//TODO: ship it
 
 pub fn init(_screenWidth: f32, _screenHeight: f32) !Self {
     gpa = general_purpose_allocator.allocator();
@@ -246,6 +247,7 @@ fn cameraUpdate(self: *Self, dt: f32) void {
 
 pub fn resetLevel(self: *Self) !void {
     self.wasReset = true;
+    lastScore = self.score;
     self.score = 0;
     self.deinit();
     self.* = try Self.init(self.screenWidth, self.screenHeight);
