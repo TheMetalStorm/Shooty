@@ -38,7 +38,6 @@ pub const DEBUG = false;
 const bgSpriteRect: rl.Rectangle = rl.Rectangle.init(0.0, 0.0, 128, 256);
 
 //TODO: enemy spawn inside viewing window?
-//TODO: add sound effects
 //TODO: ship it
 
 pub fn init(_screenWidth: f32, _screenHeight: f32) !Self {
