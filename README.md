@@ -33,3 +33,6 @@ zig build -Doptimize=ReleaseSafe
 ```
 
 I've only built and tested this game on a Windows machine, so I don't know how to build script has to be modifies to compile on other platforms.
+
+You can also download the precompiled game here: 
+https://themetalstorm.itch.io/shooty
