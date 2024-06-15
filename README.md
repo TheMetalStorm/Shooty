@@ -2,7 +2,7 @@
 
 Your name is Shooty Spacemarine and every one you know and love is dead. And if that wasn't bad enough, rent is due Friday.
 
-That is why you signed up for the Space Marines, hoping to earn some easy Credits. Sadly, you enlisted just as the Warliens attacked. Vile, evil, disgusting creatures that only want one thing: To be left alone by your authoritarian regime that is expanding into their teritorry YOUR DEATH!!1!1
+That is why you signed up for the Space Marines, hoping to earn some easy Credits. Sadly, you enlisted just as the Warliens attacked. Vile, evil, disgusting creatures that only want one thing: ~~To be left alone by your authoritarian regime that is expanding into their teritorry~~ YOUR DEATH!!1!1
 
 Make no mistake, soldier, this is a suicide mission. The only question left is whether you take enough Warliens out with you before you die a fiery, glorious death.
 
