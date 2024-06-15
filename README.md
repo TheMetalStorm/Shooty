@@ -1,8 +1,3 @@
-# Info
-
-Simple Space Shoot'em Up made with Raylib in Zig using Bindings by Not-Nik: 
-https://github.com/Not-Nik/raylib-zig
-
 # Description:
 
 Your name is Shooty Spacemarine and every one you know and love is dead. And if that wasn't bad enough, rent is due Friday.
