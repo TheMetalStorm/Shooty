@@ -31,3 +31,5 @@ This program was built with Zig 0.12. Compile it with the command:
 ```
 zig build -Doptimize=ReleaseSafe
 ```
+
+I've only built and tested this game on a Windows machine, so I don't know how to build script has to be modifies to compile on other platforms.
