@@ -16,12 +16,12 @@ pub fn init(_alloc: *std.mem.Allocator) !*Self {
 }
 
 pub fn playCurrent(self: *Self, dest: rl.Rectangle, origin: rl.Vector2, rotation: f32, color: rl.Color, dt: f32) void {
-    if (self.currentAnimation.frames.items.len == 0) {
+    if (self.currentAnimation.spriteIndices.len == 0) {
         return;
     }
 
-    if (self.currentAnimation.frames.items.len == 1) {
-        rl.drawTexturePro(self.currentAnimation.spritesheet.spritesheet.*, self.currentAnimation.frames.items[0], dest, origin, rotation, color);
+    if (self.currentAnimation.spriteIndices.len == 1) {
+        rl.drawTexturePro(self.currentAnimation.spritesheet.spritesheet.*, self.currentAnimation.spritesheet.frames.items[self.currentAnimation.spriteIndices[0]].*, dest, origin, rotation, color);
         return;
     }
 
@@ -41,8 +41,7 @@ pub fn playCurrent(self: *Self, dest: rl.Rectangle, origin: rl.Vector2, rotation
 
     const currentFrame = @as(usize, @intFromFloat(@divFloor(self.currentAnimation.playedTime, self.currentAnimation.frameTime)));
 
-    rl.drawTexturePro(self.currentAnimation.spritesheet.spritesheet.*, self.currentAnimation.frames.items[currentFrame], dest, origin, rotation, color);
-    // rl.drawText(rl.textFormat("Current Frame: %02i", .{currentFrame}), rl.getWorldToScreen2D(position: Vector2, camera: Camera2D)@as(i32, @intFromFloat(self.currentAnimation.frames.items[currentFrame].x)) + 20, @as(i32, @intFromFloat(self.currentAnimation.frames.items[currentFrame].y)) + 20, 20, rl.Color.red);
+    rl.drawTexturePro(self.currentAnimation.spritesheet.spritesheet.*, self.currentAnimation.spritesheet.frames.items[self.currentAnimation.spriteIndices[currentFrame]].*, dest, origin, rotation, color);
 }
 
 pub fn setCurrent(self: *Self, name: []const u8) !void {

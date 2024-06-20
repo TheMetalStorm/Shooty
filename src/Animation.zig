@@ -9,36 +9,25 @@ duration: f32, //in milliseconds
 playedTime: f32,
 frameTime: f32,
 loop: bool,
-frames: std.ArrayList(rl.Rectangle) = undefined,
+spriteIndices: []const usize,
 const Self = @This();
 
 pub fn init(
-    _alloc: std.mem.Allocator,
     _name: []const u8,
     _spritesheet: *Spritesheet,
     _duration: f32,
     _spriteIndices: []const usize,
     _loop: bool,
 ) !Self {
-    var _frames: std.ArrayList(rl.Rectangle) = std.ArrayList(rl.Rectangle).init(_alloc);
-    for (_spriteIndices) |index| {
-        try _frames.append(rl.Rectangle{
-            .x = @mod(@as(f32, @floatFromInt(index)), @as(f32, @floatFromInt(_spritesheet.numSpritesHorizontal))) * @as(f32, @floatFromInt(_spritesheet.spriteWidth)),
-            .y = @as(f32, @floatFromInt(index / _spritesheet.numSpritesHorizontal)) * @as(f32, @floatFromInt(_spritesheet.spriteHeight)),
-            .width = @as(f32, @floatFromInt(_spritesheet.spriteWidth)),
-            .height = @as(f32, @floatFromInt(_spritesheet.spriteHeight)),
-        });
-    }
-
     const spriteFrameTime = _duration / @as(f32, @floatFromInt(_spriteIndices.len));
 
     return Self{
         .name = _name,
         .spritesheet = _spritesheet,
         .duration = _duration,
-        .frames = _frames,
         .frameTime = spriteFrameTime,
         .loop = _loop,
         .playedTime = 0.0,
+        .spriteIndices = _spriteIndices,
     };
 }

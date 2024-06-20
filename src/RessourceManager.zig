@@ -76,7 +76,7 @@ fn createSpritesheet(path: []const u8, numW: usize, numH: usize, spriteWidth: us
 
 fn createAnimation(name: []const u8, spritesheet: *Spritesheet, length: f32, spriteIndices: []const usize, loop: bool) !*Animation {
     const animPtr = try ressourceAlloc.create(Animation);
-    animPtr.* = try Animation.init(ressourceAlloc, name, spritesheet, length, spriteIndices, loop);
+    animPtr.* = try Animation.init(name, spritesheet, length, spriteIndices, loop);
     return animPtr;
 }
 
