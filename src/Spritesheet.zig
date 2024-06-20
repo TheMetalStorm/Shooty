@@ -22,7 +22,6 @@ pub fn init(_alloc: std.mem.Allocator, _path: []const u8, _numSpritesHorizontal:
             .height = @as(f32, @floatFromInt(_spriteHeight)),
         };
         framePtr.* = frame;
-        std.debug.print("Frame {d}: {any}\n", .{ index, frame });
         try _frames.append(framePtr);
     }
 
