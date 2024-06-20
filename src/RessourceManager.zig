@@ -25,7 +25,11 @@ pub fn init(_assetPath: []const u8, _alloc: std.mem.Allocator) !void {
 
 pub fn loadSpritesheet(path: []const u8, numW: usize, numH: usize, spriteWidth: usize, spriteHeight: usize) !void {
     const fullPath = try std.mem.concat(ressourceAlloc, u8, &[_][]const u8{ assetPath, path });
-    try spritesheets.put(path, try createSpritesheet(fullPath, numW, numH, spriteWidth, spriteHeight));
+    try spritesheets.put(path, try Spritesheet.create(ressourceAlloc, fullPath, numW, numH, spriteWidth, spriteHeight));
+}
+
+pub fn loadAnimation(name: []const u8, spriteName: []const u8, length: f32, spriteIndices: []const usize, loop: bool) !void {
+    try animations.put(name, try Animation.create(ressourceAlloc, name, spritesheets.get(spriteName).?, length, spriteIndices, loop));
 }
 
 pub fn loadSound(
@@ -40,10 +44,6 @@ pub fn loadMusic(
     path: []const u8,
 ) !void {
     try music.put(name, try createMusic(path));
-}
-
-pub fn loadAnimation(name: []const u8, spriteName: []const u8, length: f32, spriteIndices: []const usize, loop: bool) !void {
-    try animations.put(name, try createAnimation(name, spritesheets.get(spriteName).?, length, spriteIndices, loop));
 }
 
 fn creatSound(path: []const u8) !*rl.Sound {
@@ -66,18 +66,6 @@ fn createMusic(path: []const u8) !*rl.Music {
     const musicPtr = try ressourceAlloc.create(rl.Music);
     musicPtr.* = rl.loadMusicStream(pathZeroTerminated);
     return musicPtr;
-}
-
-fn createSpritesheet(path: []const u8, numW: usize, numH: usize, spriteWidth: usize, spriteHeight: usize) !*Spritesheet {
-    const spritesheetPtr = try ressourceAlloc.create(Spritesheet);
-    spritesheetPtr.* = try Spritesheet.init(ressourceAlloc, path, numW, numH, spriteWidth, spriteHeight);
-    return spritesheetPtr;
-}
-
-fn createAnimation(name: []const u8, spritesheet: *Spritesheet, length: f32, spriteIndices: []const usize, loop: bool) !*Animation {
-    const animPtr = try ressourceAlloc.create(Animation);
-    animPtr.* = try Animation.init(name, spritesheet, length, spriteIndices, loop);
-    return animPtr;
 }
 
 pub fn getAnimation(name: []const u8) !*Animation {
@@ -107,6 +95,6 @@ pub fn deinit() void {
     }
     var sIterator = spritesheets.keyIterator();
     while (sIterator.next()) |key| {
-        spritesheets.get(key.*).?.deinit();
+        rl.unloadTexture(spritesheets.get(key.*).?.spritesheet.*);
     }
 }

@@ -40,6 +40,8 @@ pub fn init(_alloc: std.mem.Allocator, _path: []const u8, _numSpritesHorizontal:
     };
 }
 
-pub fn deinit(self: *Self) void {
-    rl.unloadTexture(self.spritesheet.*);
+pub fn create(_alloc: std.mem.Allocator, _path: []const u8, _numSpritesHorizontal: usize, _numSpritesVertical: usize, _spriteWidth: usize, _spriteHeight: usize) !*Self {
+    const spritesheetPtr = try _alloc.create(Self);
+    spritesheetPtr.* = try Self.init(_alloc, _path, _numSpritesHorizontal, _numSpritesVertical, _spriteWidth, _spriteHeight);
+    return spritesheetPtr;
 }

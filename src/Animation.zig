@@ -31,3 +31,16 @@ pub fn init(
         .spriteIndices = _spriteIndices,
     };
 }
+
+pub fn create(
+    _alloc: std.mem.Allocator,
+    _name: []const u8,
+    _spritesheet: *Spritesheet,
+    _duration: f32,
+    _spriteIndices: []const usize,
+    _loop: bool,
+) !*Self {
+    const animPtr = try _alloc.create(Self);
+    animPtr.* = try Self.init(_name, _spritesheet, _duration, _spriteIndices, _loop);
+    return animPtr;
+}
