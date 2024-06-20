@@ -95,6 +95,6 @@ pub fn deinit() void {
     }
     var sIterator = spritesheets.keyIterator();
     while (sIterator.next()) |key| {
-        rl.unloadTexture(spritesheets.get(key.*).?.spritesheet.*);
+        spritesheets.get(key.*).?.unloadTex();
     }
 }

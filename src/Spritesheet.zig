@@ -45,3 +45,7 @@ pub fn create(_alloc: std.mem.Allocator, _path: []const u8, _numSpritesHorizonta
     spritesheetPtr.* = try Self.init(_alloc, _path, _numSpritesHorizontal, _numSpritesVertical, _spriteWidth, _spriteHeight);
     return spritesheetPtr;
 }
+
+pub fn unloadTex(self: *Self) void {
+    rl.unloadTexture(self.spritesheet.*);
+}
